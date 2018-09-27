@@ -1,25 +1,20 @@
 {
-  "name": "namespace/my-package-name",
+  "name": "railroad/mailora",
   "type": "library",
-  "description": "my package description",
+  "description": "Wrapper for Laravel's email functionality that adds HTTP API and front-end-dev-friendly view-creation and use.",
   "keywords": [
-    "my-keyword-1",
-    "my-keyword-2"
+    "email",
+    "mail",
+    "laravel",
+    "api",
+    "wrapper"
   ],
-  "homepage": "https://github.com/namespace/my-homepage",
-  "license": "MIT",
-  "authors": [
-    {
-      "name": "Your Name",
-      "email": "your.email@email.com",
-      "homepage": "http://yourwebsite.com",
-      "role": "Your Role"
-    }
-  ],
+  "homepage": "https://github.com/railroad/mailora",
+  "license": "GPL-3.0-or-later",
   "prefer-stable": true,
   "require": {
     "php": "~7",
-    "laravel/framework": "5.*",
+    "laravel/framework": "5.6.*",
     "guzzlehttp/guzzle": "~6.0",
     "doctrine/dbal": "^2.5"
   },
@@ -31,12 +26,12 @@
   },
   "autoload": {
     "psr-4": {
-      "YourNamespace\\YourPackageName\\": "src"
+      "Railroad\\Mailora\\": "src"
     }
   },
   "autoload-dev": {
     "psr-4": {
-      "Tests\\": "tests/"
+      "Railroad\\Mailora\\Tests\\": "tests/"
     }
   }
 }

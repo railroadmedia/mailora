@@ -1,7 +1,7 @@
 Mailora
 ==============================================
 
-Wrapper for Laravel's email functionaly that adds HTTP API and front-end-dev-friendly view-creation and use.
+Wrapper for Laravel's email functionality that adds HTTP API and front-end-dev-friendly view-creation and use.
 
 Table of Contents:
 
@@ -132,22 +132,33 @@ In the /config/mailora.php file installed in your application by running `compos
 ```php
 return [
     'defaults' => [
-        'recipient-safety' =>                   env( 'MAIL_SAFETY_RECIPIENT',               null        ),
-        'recipient-address' =>                  env( 'MAIL_DEFAULT_RECIPIENT',              null        ),
-        'admin' =>                              env( 'MAIL_DEFAULT_ADMIN'),                 null        ),
-        'recipient-address-public' =>           env( 'MAIL_DEFAULT_RECIPIENT_PUBLIC',       null        ),
-        'subject' =>                            env( 'MAIL_DEFAULT_TYPE',                   null        ),
-        'sender-address' =>                     env( 'MAIL_DEFAULT_SENDER_ADDRESS',         null        ),
-        'sender-name' =>                        env( 'MAIL_DEFAULT_SENDER_NAME',            null        ),
-        'sender-public' =>                      env( 'MAIL_DEFAULT_SENDER_ADDRESS_PUBLIC',  null        ),
-        'success-message' =>                    null                                                     ,
-        'error-message' =>                      null                                                     ,
-        `production' =>                         env( 'MAIL_NAME_TO_TREAT_LIKE_PROD',        'production'),
-        `public-free-for-all' =>                env( 'MAIL_PUBLIC_FREE_FOR_ALL',            false       ),
-        `approved-from-public-recipients' =>    env( 'MAIL_APPROVED_FROM_PUBLIC_RECIPIENTS',[]          ),
-    ]
+        'recipient-safety'                  => env('MAIL_SAFETY_RECIPIENT',                 null),
+        'recipient-address'                 => env('MAIL_DEFAULT_RECIPIENT',                null),
+        'admin'                             => env('MAIL_DEFAULT_ADMIN',                    null),
+        'recipient-address-public'          => env('MAIL_DEFAULT_RECIPIENT_PUBLIC',         null),
+        'subject'                           => env('MAIL_DEFAULT_TYPE',                     null),
+        'sender-address'                    => env('MAIL_DEFAULT_SENDER_ADDRESS',           null),
+        'sender-name'                       => env('MAIL_DEFAULT_SENDER_NAME',              null),
+        'sender-public'                     => env('MAIL_DEFAULT_SENDER_ADDRESS_PUBLIC',    null),
+        'success-message'                   => null,
+        'error-message'                     => null,
+        'production'                        => env( 'MAIL_NAME_TO_TREAT_LIKE_PROD',         'production'),
+        'public-free-for-all'               => env( 'MAIL_PUBLIC_FREE_FOR_ALL',             false),
+        'approved-from-public-recipients'   => env( 'MAIL_APPROVED_FROM_PUBLIC_RECIPIENTS', []),
+    ],
+    'auth_middleware' => []
 ];
 ```
+
+<!-- todo: link to config file -->
+<!-- todo: link to config file -->
+<!-- todo: link to config file -->
+<!-- todo: link to config file -->
+<!-- todo: link to config file -->
+<!-- todo: link to config file -->
+<!-- todo: link to config file -->
+
+(tf is "auth_middleware" you ask? See the next section)
 
 
 These values in config use [Laravel's "env" function](https://laravel.com/docs/master/helpers#method-env) to use constants provided as environmental variables. If those a constant is null, then the value provided to the "env" function.
@@ -182,6 +193,34 @@ Thus, you can provide these as environmental variables:
 
 But you don't need to. It's better to just set the values for production in the config file, commit that, and then use the environmental variables for local as per below.
 
+#### 1.2.3 - authentication middleware
+
+Supply an array of one or more values as "auth_middleware". Use the key from the "$routeMiddleware" property of your application's App\Http\Kernel class ([configured as per Laravel functionality](https://laravel.com/docs/5.6/middleware#registering-middleware)).
+
+For example, if your app/Http/Kernel.php has:
+
+```
+    protected $routeMiddleware = [
+        'auth' => \WordpressAuthMiddleware::class,
+        'auth-special' => \WordpressSpecialAuthMiddleware::class,
+        'requires.edge' => \App\Http\Middleware\RequiresEdge::class,
+        'requires.edge-or-pack' => \App\Http\Middleware\RequiresPackOrEdge::class,
+        'auth.admin' => \WordpressAdminAuthMiddleware::class,
+        'auth.executives' => \StatisticsWhiteListFilter::class,
+        'auth.shippers' => \App\Http\Middleware\ShippersOrAdmin::class,
+    ];
+```
+
+then in config/mailora.php you can have this:
+
+```php
+return [
+    'defaults' => [
+        // omitted in the name of brevity
+    ],
+    'auth_middleware' => ['auth', 'auth-special']
+];
+```
 
 ### 1.3 - Config for local-development
 

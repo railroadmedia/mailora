@@ -2,7 +2,7 @@
 
 use Illuminate\Foundation\Support\Providers\EventServiceProvider as ServiceProvider;
 
-class ForumServiceProvider extends ServiceProvider
+class MailoraServiceProvider extends ServiceProvider
 {
     /**
      * Bootstrap the application services.
