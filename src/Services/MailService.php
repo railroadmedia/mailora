@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Services;
+namespace Railroad\Mailora\Services;
 
 use App\Mail\General;
 use Exception;

@@ -1,4 +1,4 @@
-<?php namespace MyNamespace\MyPackageName;
+<?php namespace Railroad\Mailora\Providers;
 
 use Illuminate\Foundation\Support\Providers\EventServiceProvider as ServiceProvider;
 
@@ -16,9 +16,10 @@ class MailoraServiceProvider extends ServiceProvider
         $this->loadMigrationsFrom(__DIR__ . '/../migrations');
         $this->publishes(
             [
-                __DIR__ . '/../config/mailora-config.php' => config_path('mailora-config.php'),
+                __DIR__ . '/../../config/mailora-config.php' => config_path('mailora-config.php')
             ]
         );
+        $this->loadRoutesFrom(__DIR__.'/../../routes/mailora.php');
     }
 
     /**

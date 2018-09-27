@@ -1,8 +1,9 @@
 <?php
 
-namespace App\Http\Controllers;
+namespace Railroad\Mailora\Controllers;
 
-use App\Services\MailService;
+use Illuminate\Http\JsonResponse;
+use Railroad\Mailora\Services\MailService;
 use Illuminate\Http\Request;
 
 class MailController
@@ -21,9 +22,13 @@ class MailController
     {
         $input = $request->all();
 
-        $input['recipient-address'] = env('MAIL_DEFAULT_RECIPIENT') ?? MAIL_DEFAULT_RECIPIENT;
+//        $input['recipient-address'] = env('MAIL_DEFAULT_RECIPIENT') ?? MAIL_DEFAULT_RECIPIENT;
+//
+//        $sent = $this->send($input);
 
-        return $this->send($input);
+        $sent = true;
+
+        return JsonResponse::create(['sent' => $sent]);
     }
 
     /*

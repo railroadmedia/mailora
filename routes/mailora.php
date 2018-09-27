@@ -1,5 +1,6 @@
 <?php
 
+use Railroad\Mailora\Controllers\MailController;
 use Illuminate\Support\Facades\Route;
 
 Route::group(
@@ -14,7 +15,7 @@ Route::group(
             function(){
                 Route::post(
                     '/',
-                    \App\Http\Controllers\MailController::class . '@send'
+                    MailController::class . '@send'
                 )->name('mailora');
             }
         );
@@ -24,8 +25,9 @@ Route::group(
             ],
             function(){
                 Route::post(
+//                Route::get(
                     '/',
-                    \App\Http\Controllers\MailController::class . '@sendFromPublic'
+                    MailController::class . '@sendFromPublic'
                 )->name('mailora.public');
             }
         );
