@@ -22,9 +22,7 @@ class MailController
     {
         $input = $request->all();
 
-//        $input['recipient-address'] = env('MAIL_DEFAULT_RECIPIENT') ?? MAIL_DEFAULT_RECIPIENT;
-//
-//        $sent = $this->send($input);
+        $sent = $this->send($input);
 
         $sent = true;
 
