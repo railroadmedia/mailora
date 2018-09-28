@@ -121,8 +121,7 @@ class MailService
 
         $this->setSender($input, $email);
         $this->setRecipient($input, $email);
-
-        $email->subject(!empty($input['subject']) ? $input['subject'] : 'General Inquiry - Subject not specified');
+        $this->setSubject($input, $email);
 
         if($input['reply-to'] !== null){
             /*
@@ -216,5 +215,19 @@ class MailService
         }else{ // must use else, or else will set *two* recipients, one with name, one without.
             $email->to($recipientAddress);
         }
+    }
+
+    private function setSubject($input, Mailable &$email){
+        $subject = 'General Inquiry - Subject not specified';
+
+        if(config('mailora.defaults.subject')){
+            $subject = config('mailora.defaults.subject');
+        }
+
+        if(!empty($input['subject'])){
+            $subject = $input['subject'];
+        }
+
+        $email->subject($subject);
     }
 }
