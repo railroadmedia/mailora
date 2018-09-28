@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Mail;
+namespace Railroad\Mailora\Mail;
 
 use Illuminate\Bus\Queueable;
 use Illuminate\Mail\Mailable;

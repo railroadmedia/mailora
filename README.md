@@ -465,3 +465,17 @@ use the one package default
 <!-- todo: link to file with package default. Define it as a static of the class to make it easier to find at the top of the file-->
 <!-- todo: link to file with package default. Define it as a static of the class to make it easier to find at the top of the file-->
 <!-- todo: link to file with package default. Define it as a static of the class to make it easier to find at the top of the file-->
+
+
+Misc notes to incorporate
+----------------------------------------------
+
+If you provide a a "general.blade.php" file in the directory returned by config('mailora.views-directory')...
+
+
+todo: write about how config('mailora.mailables-namespace'
+
+
+todo: need a way to specify laravel root path in case different than standard. ex: drumeo
+
+

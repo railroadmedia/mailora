@@ -9,15 +9,6 @@ use Illuminate\Support\Facades\Mail;
 
 class MailService
 {
-    const MAIL_NAMESPACE = 'App\Mail\\';
-
-//    const EMAIL_TEMPLATE_DIR_NAME = 'emails';
-    const EMAIL_TEMPLATE_DIR_NAME = '';
-
-    const TYPE_CLASS_MAP = [
-        'general' => 'General'
-    ];
-
     /**
      * MailService constructor.
      * @throws Exception
@@ -76,6 +67,11 @@ class MailService
      */
     public function send($input, $returnExceptionObjectOnFailure = false){
         $email = $this->makeEmailObject($input);
+
+        if($email === false){
+            return false;
+        }
+
         try{
             Mail::send($email);
         }catch(Exception $exception){
@@ -92,13 +88,15 @@ class MailService
 
     /**
      * @param $input array
-     * @return Mailable
+     * @return Mailable|bool
      */
     private function makeEmailObject($input)
     {
-        $type = !empty($input['type']) ? $input['type'] : config('mailora.defaults.type');
+        $email = $this->getEmailInstance($input);
 
-        $email = $this->getEmailInstance($input, $type);
+        if($email === false){
+            return false;
+        }
 
         $this->setSender($input, $email);
         $this->setRecipient($input, $email);
@@ -111,35 +109,102 @@ class MailService
         return $email;
     }
 
-    private function getEmailInstance($input, $type)
+    /**
+     * @param $input
+     * @param $type
+     *
+     * @return Mailable|bool $email
+     */
+    private function getEmailInstance($input)
     {
-//        $view = $this::EMAIL_TEMPLATE_DIR_NAME . '.' . $type;
-        $view = !empty($this::EMAIL_TEMPLATE_DIR_NAME) ? $this::EMAIL_TEMPLATE_DIR_NAME . '.' . $type : $type;
+        // 0. get custom-namespace
 
-        $typeMatchesAnAvailableClass = $this::TYPE_CLASS_MAP[$type];
-
-        if($typeMatchesAnAvailableClass) {
-            $emailClass = $this::MAIL_NAMESPACE . $this::TYPE_CLASS_MAP[$type];
-        }else{
-            /*
-             * If class for type doesn't exist, default to 'General'.
-             * Set view as 'general', but then check for—and use if available—a type-specific view.
-             *
-             * This enables front-end developers to create new types without having to muck around creating a new class.
-             * They can just create the view, and then pass that 'type' value to access that view.
-             */
-
-            /** @var General $emailClass */
-            $emailClass = $this::MAIL_NAMESPACE . 'General';
-
-            $view = $this::EMAIL_TEMPLATE_DIR_NAME . '.general';
-            $emailTemplateFileToLookFor = $_SERVER["DOCUMENT_ROOT"] . '/laravel/resources/views/' .
-                $this::EMAIL_TEMPLATE_DIR_NAME . '/' . $type . '.blade.php';
-
-            if (file_exists($emailTemplateFileToLookFor)) {
-                $view = $this::EMAIL_TEMPLATE_DIR_NAME . '.' . $type;
+        // Ensure config-provided custome namespace has backslash on end.
+        $customNamespace = config('mailora.mailables-namespace');
+        if(!empty($customNamespace)){
+            $endsWithBackslash = substr($customNamespace, -1) === '\\';
+            if(!$endsWithBackslash){
+                $customNamespace = $customNamespace . '\\';
             }
         }
+
+        // 1. get type
+
+        $type = config('mailora.defaults.type');
+
+        if(!empty($input['type'])){
+            $type = $input['type'];
+        }
+
+        // 2. get views and classes
+
+        if($type === 'general'){
+
+            // default to native version
+            $view = '/laravel/vendor/railroad/mailora/resources/views/general.blade.php'; // how to best specify this path??
+            $view = '/laravel/vendor/railroad/mailora/resources/views/general.blade.php'; // how to best specify this path??
+            $view = '/laravel/vendor/railroad/mailora/resources/views/general.blade.php'; // how to best specify this path??
+            $view = '/laravel/vendor/railroad/mailora/resources/views/general.blade.php'; // how to best specify this path??
+            $view = '/laravel/vendor/railroad/mailora/resources/views/general.blade.php'; // how to best specify this path??
+            $view = '/laravel/vendor/railroad/mailora/resources/views/general.blade.php'; // how to best specify this path??
+            $emailClass = '\Railroad\Mailora\Mail\General';
+
+            $viewFileExists = file_exists($view); // why doesn't this work? How to best define ↑↑↑↑↑↑ 
+            $viewFileExists = file_exists($view); // why doesn't this work? How to best define ↑↑↑↑↑↑
+            $viewFileExists = file_exists($view); // why doesn't this work? How to best define ↑↑↑↑↑↑
+            $viewFileExists = file_exists($view); // why doesn't this work? How to best define ↑↑↑↑↑↑
+            $viewFileExists = file_exists($view); // why doesn't this work? How to best define ↑↑↑↑↑↑
+            $viewFileExists = file_exists($view); // why doesn't this work? How to best define ↑↑↑↑↑↑
+            $viewFileExists = file_exists($view); // why doesn't this work? How to best define ↑↑↑↑↑↑
+            $viewFileExists = file_exists($view); // why doesn't this work? How to best define ↑↑↑↑↑↑
+            $viewFileExists = file_exists($view); // why doesn't this work? How to best define ↑↑↑↑↑↑
+            $viewFileExists = file_exists($view); // why doesn't this work? How to best define ↑↑↑↑↑↑
+            $viewFileExists = file_exists($view); // why doesn't this work? How to best define ↑↑↑↑↑↑
+            $viewFileExists = file_exists($view); // why doesn't this work? How to best define ↑↑↑↑↑↑
+            $viewFileExists = file_exists($view); // why doesn't this work? How to best define ↑↑↑↑↑↑
+            $viewFileExists = file_exists($view); // why doesn't this work? How to best define ↑↑↑↑↑↑
+
+            // assuming (class_exists($emailClass) === true) ...
+
+            // overwrite with custom if provided
+            $customGeneralView = config('mailora.views-directory') . '/' . $type . '.blade.php';
+            if (file_exists($customGeneralView)) {
+                $view = $customGeneralView;
+            }
+
+            // see if custom General Mailable class exists
+            if($customNamespace){
+                $customGeneralClass = $customNamespace . 'General';
+                if(class_exists($customGeneralClass)){
+                    $emailClass = $customGeneralClass;
+                }
+            }
+
+        }else{ // if $type !== 'general'
+
+            // get view
+            $customPotentialView = $_SERVER["DOCUMENT_ROOT"] . config('mailora.views-directory') . '/' . $type . '.blade.php';
+            if (file_exists($customPotentialView)) {
+                $view = $customPotentialView;
+            }else{
+                $message = 'Custom type specified does have corresponding custom view. Email not sent. ';
+                $message .= json_encode($input);
+                error_log($message);
+                $this->sendErrorMessageToAdmin($message);
+                return false;
+            }
+
+            // get class
+            $potentialClass = $this->dashesToCamelCase($type, true);
+            if($customNamespace){
+                $customClassForCustomType = $customNamespace . $potentialClass;
+                if(class_exists($customClassForCustomType)){
+                    $emailClass = $customClassForCustomType;
+                }
+            }
+        }
+
+        // 3. create Mailable instance
 
         return new $emailClass($input, $view);
     }
@@ -211,5 +276,22 @@ class MailService
                 $email->replyTo($user->email);
             }
         }
+    }
+
+    private function dashesToCamelCase($string, $capitalizeFirstCharacter = false)
+    {
+        $str = str_replace('-', '', ucwords($string, '-'));
+
+        if (!$capitalizeFirstCharacter) {
+            $str = lcfirst($str);
+        }
+
+        return $str;
+    }
+
+    private function sendErrorMessageToAdmin($message){
+        // todo maybe?
+        // todo maybe?
+        // todo maybe?
     }
 }
