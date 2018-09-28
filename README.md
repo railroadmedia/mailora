@@ -158,7 +158,7 @@ return [
     'defaults' => [
 
         // 1.0 REQUIRED (from either here, or provided by environmental variable)
-        'recipient-safety' =>   env('MAIL_SAFETY_RECIPIENT',    ''), // REQUIRED!
+        'safety-recipient' =>   env('MAIL_SAFETY_RECIPIENT',    ''), // REQUIRED!
         'sender-address' =>     env('MAIL_FROM_ADDRESS',        ''), // REQUIRED!
         'sender-name' =>        env('MAIL_FROM_NAME',           ''), // REQUIRED!
         'recipient-address' =>  env('MAIL_DEFAULT_RECIPIENT',   ''), // REQUIRED!

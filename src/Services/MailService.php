@@ -10,6 +10,7 @@ use Illuminate\Support\Facades\Mail;
 class MailService
 {
     const MAIL_NAMESPACE = 'App\Mail\\';
+
 //    const EMAIL_TEMPLATE_DIR_NAME = 'emails';
     const EMAIL_TEMPLATE_DIR_NAME = '';
 
@@ -17,14 +18,53 @@ class MailService
         'general' => 'General'
     ];
 
+    /**
+     * MailService constructor.
+     * @throws Exception
+     */
     public function __construct()
     {
+        $this->ensureConfigSet();
+    }
 
-        if(empty($senderAddress)){
+    /**
+     * @throws Exception
+     */
+    private function ensureConfigSet(){
+        $recipientSafety = config('mailora.defaults.safety-recipient');
+        $senderAddress = config('mailora.defaults.sender-address');
+        $senderName = config('mailora.defaults.sender-name');
+        $recipientAddress = config('mailora.defaults.recipient-address');
+        $nameOfProductionEnv = config('mailora.defaults.name-of-production-env');
+
+        if(
+            empty($recipientSafety) ||
+            empty($senderAddress) ||
+            empty($senderName) ||
+            empty($recipientAddress) ||
+            empty($nameOfProductionEnv)
+        ){
+            $notSet = [];
+
+            if(empty($recipientSafety)){
+                $notSet[] = 'safety-recipient';
+            }
+            if(empty($senderAddress)){
+                $notSet[] = 'sender-address';
+            }
+            if(empty($senderName)){
+                $notSet[] = 'sender-name';
+            }
+            if(empty($recipientAddress)){
+                $notSet[] = 'recipient-address';
+            }
+            if(empty($nameOfProductionEnv)){
+                $notSet[] = 'name-of-production-env';
+            }
             throw new Exception(
-                'Mailora package improperly configured. Missing "MAIL_FROM_ADDRESS" ' .
-                ' environmental variable.'
+                'Required Mailora config (mailora.defaults) values not set (' . implode(', ', $notSet) . ')'
             );
+
         }
     }
     /**
@@ -32,16 +72,6 @@ class MailService
      * @param $returnExceptionObjectOnFailure null|bool
      *
      * @return bool|Exception
-     *
-     *  Good values to pass include but are not limited to:
-     *      'recipient-address'
-     *      'subject'
-     *      'sender'
-     *      'sender-name'
-     *      'reply-to'
-     *      'type'
-     *      'error-message'
-     *      'success-message'
      */
     public function send($input, $returnExceptionObjectOnFailure = false){
         $email = $this->makeEmailObject($input);
@@ -146,14 +176,14 @@ class MailService
 
     private function setSender($input, Mailable &$email)
     {
-        $senderAddress = env('MAIL_FROM_ADDRESS') ?? env('MAIL_FROM_ADDRESS', null);
-        $senderName = env('MAIL_FROM_NAME') ?? env('MAIL_FROM_NAME', null);
+        $senderAddress = config('mailora.defaults.sender-address');
+        $senderName = config('mailora.defaults.sender-name');
 
         if (!empty($input['sender-address'])) {
-
             $senderAddress = $input['sender-address'];
+            $senderName = null;
 
-            if (!empty($input['sender-name'])) {
+            if(!empty($input['sender-name'])){
                 $senderName = $input['sender-name'];
             }
         }
@@ -163,23 +193,28 @@ class MailService
 
     private function setRecipient($input, Mailable &$email)
     {
-        $recipientAddress = $input['recipient-address'];
+        // PART 1 - determine value to set as recipient
 
-        if(app()->environment() !== 'production') {
-            $recipientAddress = env('MAIL_SAFETY_RECIPIENT') ?? MAIL_SAFETY_RECIPIENT;
+        // 1.1. default to default
+        $recipientAddress = $email->to(config('mailora.defaults.recipient-address'));
+
+        // 1.2 if input provided, use that
+        if(!empty($input['recipient-address'])){
+            $recipientAddress = $input['recipient-address'];
         }
 
-        $addressSetButNotName = !empty($input['recipient-address']) && empty($input['recipient-name']);
-        $addressAndNameSet = !empty($input['recipient-address']) && !empty($input['recipient-name']);
+        // 1.3 if not prod, discard previous and use safety
+        $production = app()->environment() === config('mailora.defaults.name-of-production-env');
+        if(!$production) {
+            $recipientAddress = config('mailora.defaults.safety-recipient');
+        }
 
-        if ($addressAndNameSet) {
+        // PART 2 - set it
+
+        if (!empty($input['recipient-name'])) {
             $email->to($recipientAddress, $input['recipient-name']);
-        }else{
-            if ($addressSetButNotName) {
-                $email->to($recipientAddress);
-            }else{
-                $email->to(env('MAIL_DEFAULT_RECIPIENT') ?? MAIL_DEFAULT_RECIPIENT);
-            }
+        }else{ // must use else, or else will set *two* recipients, one with name, one without.
+            $email->to($recipientAddress);
         }
     }
 }
