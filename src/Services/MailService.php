@@ -10,12 +10,23 @@ use Illuminate\Support\Facades\Mail;
 class MailService
 {
     const MAIL_NAMESPACE = 'App\Mail\\';
-    const EMAIL_TEMPLATE_DIR_NAME = 'emails';
+//    const EMAIL_TEMPLATE_DIR_NAME = 'emails';
+    const EMAIL_TEMPLATE_DIR_NAME = '';
 
     const TYPE_CLASS_MAP = [
         'general' => 'General'
     ];
 
+    public function __construct()
+    {
+
+        if(empty($senderAddress)){
+            throw new Exception(
+                'Mailora package improperly configured. Missing "MAIL_FROM_ADDRESS" ' .
+                ' environmental variable.'
+            );
+        }
+    }
     /**
      * @param $input array
      * @param $returnExceptionObjectOnFailure null|bool
@@ -102,7 +113,8 @@ class MailService
 
     private function getEmailInstance($input, $type)
     {
-        $view = $this::EMAIL_TEMPLATE_DIR_NAME . '.' . $type;
+//        $view = $this::EMAIL_TEMPLATE_DIR_NAME . '.' . $type;
+        $view = !empty($this::EMAIL_TEMPLATE_DIR_NAME) ? $this::EMAIL_TEMPLATE_DIR_NAME . '.' . $type : $type;
 
         $typeMatchesAnAvailableClass = $this::TYPE_CLASS_MAP[$type];
 
@@ -134,8 +146,8 @@ class MailService
 
     private function setSender($input, Mailable &$email)
     {
-        $senderAddress = env('MAIL_DEFAULT_SENDER_ADDRESS') ?? MAIL_DEFAULT_SENDER_ADDRESS;
-        $senderName = env('MAIL_DEFAULT_SENDER_NAME') ?? MAIL_DEFAULT_SENDER_NAME;
+        $senderAddress = env('MAIL_FROM_ADDRESS') ?? env('MAIL_FROM_ADDRESS', null);
+        $senderName = env('MAIL_FROM_NAME') ?? env('MAIL_FROM_NAME', null);
 
         if (!empty($input['sender-address'])) {
 

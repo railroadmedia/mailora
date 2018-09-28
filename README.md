@@ -73,6 +73,24 @@ This will copy view files, the configuration file, and the routes file from the 
 
 Define these in your environmental variables as there is no handling for for them via the config file. They shouldn't committed, thus there's no consideration for that.
 
+Provide the required values to your applications config/mail.php file. See Laravel documention for details.
+
+Don't commit your MAIL_PASSWORD, but rather supply it as an environmental variable.
+
+Supply as environmental variables to keep secret:
+
+* "MAIL_PASSWORD"
+
+Hardcode these in the config file:
+
+* MAIL_DRIVER
+* MAIL_USERNAME
+* MAIL_SAFETY_RECIPIENT
+* MAIL_DEFAULT_RECIPIENT
+
+
+(remember that because the config file uses Laravel's "env()" helper function, you can override a hardcoded value at any time by supplying an environmental variable. This can be useful for alternate configurations for local or staging environments.
+
 #### 1.2.2 - non-sensitive
 
 Provide values for the following fields. 
@@ -130,23 +148,45 @@ Note 5: Example for "approved-from-public-recipients": `['foo@your-domain.com', 
 In the /config/mailora.php file installed in your application by running `composer install`, replace the empty strings with values for use in production.
 
 ```php
+<?php
+
 return [
+    // 0. REQUIRED For authentication-protected route - See documentation for details
+    'auth_middleware' => [],
+
+    // 1. Some required, some optional...
     'defaults' => [
-        'recipient-safety'                  => env('MAIL_SAFETY_RECIPIENT',                 null),
-        'recipient-address'                 => env('MAIL_DEFAULT_RECIPIENT',                null),
-        'admin'                             => env('MAIL_DEFAULT_ADMIN',                    null),
-        'recipient-address-public'          => env('MAIL_DEFAULT_RECIPIENT_PUBLIC',         null),
-        'subject'                           => env('MAIL_DEFAULT_TYPE',                     null),
-        'sender-address'                    => env('MAIL_DEFAULT_SENDER_ADDRESS',           null),
-        'sender-name'                       => env('MAIL_DEFAULT_SENDER_NAME',              null),
-        'sender-public'                     => env('MAIL_DEFAULT_SENDER_ADDRESS_PUBLIC',    null),
-        'success-message'                   => null,
-        'error-message'                     => null,
-        'production'                        => env( 'MAIL_NAME_TO_TREAT_LIKE_PROD',         'production'),
-        'public-free-for-all'               => env( 'MAIL_PUBLIC_FREE_FOR_ALL',             false),
-        'approved-from-public-recipients'   => env( 'MAIL_APPROVED_FROM_PUBLIC_RECIPIENTS', []),
+
+        // 1.0 REQUIRED (from either here, or provided by environmental variable)
+        'recipient-safety' =>   env('MAIL_SAFETY_RECIPIENT',    ''), // REQUIRED!
+        'sender-address' =>     env('MAIL_FROM_ADDRESS',        ''), // REQUIRED!
+        'sender-name' =>        env('MAIL_FROM_NAME',           ''), // REQUIRED!
+        'recipient-address' =>  env('MAIL_DEFAULT_RECIPIENT',   ''), // REQUIRED!
+
+        // 1.1 REQUIRED... To make "public" route work
+        'approved-from-public-recipients' => env( 'MAIL_APPROVED_FROM_PUBLIC_RECIPIENTS', []),
+
+        // 1.2 Optional - receive emails of errors
+        'admin' => env('MAIL_DEFAULT_ADMIN', null),
+
+        // 1.3 Optional - application-specific defaults for text shown to users
+        'subject' => env('MAIL_DEFAULT_TYPE', null),
+        'success-message' => null,
+        'error-message' => null,
+
+        // 1.4 Optional - Advanced, see documentation for details
+        'production' => env( 'MAIL_NAME_TO_TREAT_LIKE_PROD', 'production'),
+        'public-free-for-all' => env( 'MAIL_PUBLIC_FREE_FOR_ALL', false),
+
+        // ----------------------------------------- leave out for now
+        // ----------------------------------------- leave out for now
+        // not necessary and unnecessarily complex - leave out for now
+        // ----------------------------------------- leave out for now
+        // ----------------------------------------- leave out for now
+        // 1.5 add "+from-public" tag to end of default FROM and TWO email.
+        // 'recipient-address-public' => env('MAIL_DEFAULT_RECIPIENT_PUBLIC', null),
+        // 'sender-public' => env('MAIL_FROM_ADDRESS_PUBLIC', null),
     ],
-    'auth_middleware' => []
 ];
 ```
 
@@ -187,9 +227,9 @@ Thus, you can provide these as environmental variables:
 * MAIL_DEFAULT_RECIPIENT
 * MAIL_DEFAULT_RECIPIENT_PUBLIC
 * MAIL_DEFAULT_TYPE
-* MAIL_DEFAULT_SENDER_ADDRESS
+* MAIL_FROM_ADDRESS
 * MAIL_DEFAULT_SENDER_NAME
-* MAIL_DEFAULT_SENDER_ADDRESS_PUBLIC
+* MAIL_FROM_ADDRESS_PUBLIC
 
 But you don't need to. It's better to just set the values for production in the config file, commit that, and then use the environmental variables for local as per below.
 
@@ -227,16 +267,16 @@ return [
 
 Provide values to .env. You can provide any you want, but the only one that you **must** set is "MAIL_SAFETY_RECIPIENT". There are cases when failure to provide a value to this variable will cause no emails to send. See the note above ("Note 3" in section about configuration variable).
 
-It's also recommended to set "MAIL_DEFAULT_RECIPIENT" and "MAIL_DEFAULT_SENDER_ADDRESS" to avoid confusing and/or spamming your co-workers.
+It's also recommended to set "MAIL_DEFAULT_RECIPIENT" and "MAIL_FROM_ADDRESS" to avoid confusing and/or spamming your co-workers.
 
 example:
 
 ```
 MAIL_SAFETY_RECIPIENT=jonathan+recordeo_local_safety_recipient@drumeo.com
 MAIL_DEFAULT_RECIPIENT=jonathan+recordeo_local_default_recipient@drumeo.com
-MAIL_DEFAULT_SENDER_ADDRESS=system+from_local_dev@recordeo.com
+MAIL_FROM_ADDRESS=system+from_local_dev@recordeo.com
 MAIL_DEFAULT_SENDER_NAME=Recordeo
-MAIL_DEFAULT_SENDER_ADDRESS_PUBLIC=system+public@recordeo.com
+MAIL_FROM_ADDRESS_PUBLIC=system+public@recordeo.com
 ```
 
 **Especially important is `MAIL_SAFETY_RECIPIENT`**. This ensures that customers (and fellow team members) are not spammed when you're developing locally. When that variable is set, and the environment is *not* production *all* emails go to that specified address. If that variable is not set, no emails will be sent (so long as environment is *not* "production").
@@ -259,7 +299,7 @@ See details below.
 
 Can be called from publicly-exposed. Can be called from anywhere. Handy for sending emails from support and sales pages.
 
-Recipient cannot be specified. Will be sent to MAIL_DEFAULT_SENDER_ADDRESS unless MAIL_DEFAULT_SENDER_ADDRESS_PUBLIC provided. Though, you can set the "Sender name"<!-- change if below is implemented -->
+Recipient cannot be specified. Will be sent to MAIL_FROM_ADDRESS unless MAIL_FROM_ADDRESS_PUBLIC provided. Though, you can set the "Sender name"<!-- change if below is implemented -->
 
 User must be defined in config file "config/mailora.php". If user is not present there, email will not be send to intended recipient but rather a "unauthorized_recipient" email will be sent to the address provided by c.
 

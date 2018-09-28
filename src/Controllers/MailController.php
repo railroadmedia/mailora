@@ -24,7 +24,7 @@ class MailController
 
         $sent = $this->send($input);
 
-        $sent = true;
+//        $sent = true;
 
         return JsonResponse::create(['sent' => $sent]);
     }

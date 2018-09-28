@@ -15,7 +15,7 @@ class MailoraServiceProvider extends ServiceProvider
 
         $this->publishes(
             [
-                __DIR__ . '/../../config/mailora-config.php' => config_path('mailora-config.php')
+                __DIR__ . '/../../config/mailora.php' => config_path('mailora.php')
             ]
         );
         $this->loadRoutesFrom(__DIR__.'/../../routes/mailora.php');
