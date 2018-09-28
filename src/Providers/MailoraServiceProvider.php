@@ -13,13 +13,13 @@ class MailoraServiceProvider extends ServiceProvider
     {
         parent::boot();
 
-        $this->loadMigrationsFrom(__DIR__ . '/../migrations');
         $this->publishes(
             [
                 __DIR__ . '/../../config/mailora-config.php' => config_path('mailora-config.php')
             ]
         );
         $this->loadRoutesFrom(__DIR__.'/../../routes/mailora.php');
+        $this->loadViewsFrom(__DIR__ . '../../resources/views', 'mailora');
     }
 
     /**
