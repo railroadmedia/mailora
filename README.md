@@ -83,11 +83,7 @@ Supply as environmental variables to keep secret:
 
 Hardcode these in the config file:
 
-* MAIL_DRIVER
-* MAIL_USERNAME
-* MAIL_SAFETY_RECIPIENT
-* MAIL_DEFAULT_RECIPIENT
-
+Configure the 'drive' value of your applications' config/mail.php (can just supply MAIL_DRIVER environmental variable). config/mail.php is a Laravel config file.
 
 (remember that because the config file uses Laravel's "env()" helper function, you can override a hardcoded value at any time by supplying an environmental variable. This can be useful for alternate configurations for local or staging environments.
 
@@ -97,20 +93,19 @@ Provide values for the following fields.
 
 They are defaults when no other value is provided by the request (or any programmatic means on route to the sending—in a specialized "Mailable" class type for example). This is useful if many there are many places in your application  are sending emails destined for single email address. In such cases, you don't have to then specify the recipient-address. Just leave it blank knowing the Mailora installation is configured to send everything without a recipient-address to that address.
 
-| field                           | example                                | notes                | 
-|---------------------------------|----------------------------------------|----------------------| 
-| recipient-address               | "support@your-domain.com"              |                      | 
-| recipient-address-public        | "support+pub@your-domain.com"          |                      | 
-| admin                           | "dev+email-system-msg@your-domain.com" |                      | 
-| subject                         | "General Inquiry"                      |                      | 
-| sender-address                  | "system@your-domain.com"               |                      | 
-| sender-name                     | "Your Domain"                          | (See "Note 1" below) | 
-| sender-public                   | "system+pub@your-domain.com"           | (See "Note 2" below) | 
-| success-message                 | "Email friggen sent!"                  |                      | 
-| error-message                   | "Oh noes!"                             |                      | 
-| production                      | "staging"                              | (See "Note 3" below) | 
-| public-free-for-all             | `false`                                | (See "Note 4" below) | 
-| approved-from-public-recipients | (see example in "Note 5" below)        |                      | 
+<!-- UPDATED TABLE GOES HERE -->
+<!-- UPDATED TABLE GOES HERE -->
+<!-- UPDATED TABLE GOES HERE -->
+**(TABLE MISSING!!)**
+**(TABLE MISSING!!)**
+**(TABLE MISSING!!)**
+<!-- UPDATED TABLE GOES HERE -->
+<!-- UPDATED TABLE GOES HERE -->
+<!-- UPDATED TABLE GOES HERE -->
+
+<-- ↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓ UPDATE according to config/mailora.php changes ↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓ -->
+<-- ↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓ UPDATE according to config/mailora.php changes ↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓ -->
+<-- ↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓ UPDATE according to config/mailora.php changes ↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓ -->
 
 <!-- donatstudios.com/CsvToMarkdownTable
 field,example,notes
@@ -123,9 +118,10 @@ sender-name,"Your Domain",(See "Note 1" below)
 sender-public,"system+pub@your-domain.com",(See "Note 2" below)
 success-message,"Email friggen sent!", 
 error-message,"Oh noes!",
-production,"staging",(See "Note 3" below)
-public-free-for-all,`false`,(See "Note 4" below)
+production,"production",(See "Note 3" below)
+public-free-for-all,false,(See "Note 4" below)
 approved-from-public-recipients,(see example in "Note 5" below)
+users-email-set-reply-to,true, (See "Note 6" below)
 -->
 
 Note 1: If sender-name provided but not sender-address then sender-name will not be used. This is so that an unintended use of a "name" on an unrelated.
@@ -136,17 +132,24 @@ Note 3: if environment is anything other than "production", this must be set, ot
 
 Note 4: If set to boolean `true`, public endpoint can then take a "recipient-address" body param that is not in the "approved-from-public-recipients" list. 
 
+<!-- todo: yeah? is this really? so? Maybe if not just delete this one -->
+<!-- todo: yeah? is this really? so? Maybe if not just delete this one -->
+<!-- todo: yeah? is this really? so? Maybe if not just delete this one -->
+<!-- todo: yeah? is this really? so? Maybe if not just delete this one -->
+<!-- todo: yeah? is this really? so? Maybe if not just delete this one -->
+<!-- todo: yeah? is this really? so? Maybe if not just delete this one -->
+
 Note 5: Example for "approved-from-public-recipients": `['foo@your-domain.com', 'bar@your-domain.com']`
 
-<!-- todo: yeah? is this really? so? Maybe if not just delete this one -->
-<!-- todo: yeah? is this really? so? Maybe if not just delete this one -->
-<!-- todo: yeah? is this really? so? Maybe if not just delete this one -->
-<!-- todo: yeah? is this really? so? Maybe if not just delete this one -->
-<!-- todo: yeah? is this really? so? Maybe if not just delete this one -->
-<!-- todo: yeah? is this really? so? Maybe if not just delete this one -->
+Note 6: if "users-email-set-reply-to" is true, in requests to the route requiring authentication (where a user is available from Laravel's `auth()->user()`), if no "reply-to" is passed in the request, the user's email address will be set. Note though, that you can also specify in any request to *not* use it—thus overriding a `true` value here only when needed.
 
 In the /config/mailora.php file installed in your application by running `composer install`, replace the empty strings with values for use in production.
 
+
+
+<-- ↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓ UPDATE according to config/mailora.php changes ↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓ -->
+<-- ↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓ UPDATE according to config/mailora.php changes ↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓ -->
+<-- ↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓ UPDATE according to config/mailora.php changes ↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓ -->
 ```php
 <?php
 
@@ -157,35 +160,14 @@ return [
     // 1. Some required, some optional...
     'defaults' => [
 
-        // 1.0 REQUIRED (from either here, or provided by environmental variable)
-        'safety-recipient' =>   env('MAIL_SAFETY_RECIPIENT',    ''), // REQUIRED!
-        'sender-address' =>     env('MAIL_FROM_ADDRESS',        ''), // REQUIRED!
-        'sender-name' =>        env('MAIL_FROM_NAME',           ''), // REQUIRED!
-        'recipient-address' =>  env('MAIL_DEFAULT_RECIPIENT',   ''), // REQUIRED!
-
-        // 1.1 REQUIRED... To make "public" route work
-        'approved-from-public-recipients' => env( 'MAIL_APPROVED_FROM_PUBLIC_RECIPIENTS', []),
-
-        // 1.2 Optional - receive emails of errors
-        'admin' => env('MAIL_DEFAULT_ADMIN', null),
-
-        // 1.3 Optional - application-specific defaults for text shown to users
-        'subject' => env('MAIL_DEFAULT_TYPE', null),
-        'success-message' => null,
-        'error-message' => null,
-
-        // 1.4 Optional - Advanced, see documentation for details
-        'production' => env( 'MAIL_NAME_TO_TREAT_LIKE_PROD', 'production'),
-        'public-free-for-all' => env( 'MAIL_PUBLIC_FREE_FOR_ALL', false),
-
-        // ----------------------------------------- leave out for now
-        // ----------------------------------------- leave out for now
-        // not necessary and unnecessarily complex - leave out for now
-        // ----------------------------------------- leave out for now
-        // ----------------------------------------- leave out for now
-        // 1.5 add "+from-public" tag to end of default FROM and TWO email.
-        // 'recipient-address-public' => env('MAIL_DEFAULT_RECIPIENT_PUBLIC', null),
-        // 'sender-public' => env('MAIL_FROM_ADDRESS_PUBLIC', null),
+        // UPDATE according to config/mailora.php changes
+        // UPDATE according to config/mailora.php changes
+        // UPDATE according to config/mailora.php changes
+        // UPDATE according to config/mailora.php changes
+        // UPDATE according to config/mailora.php changes
+        // UPDATE according to config/mailora.php changes
+        // UPDATE according to config/mailora.php changes
+      
     ],
 ];
 ```
@@ -223,13 +205,14 @@ $senderName = $mail['sender-name'];
 
 Thus, you can provide these as environmental variables:
 
-* MAIL_SAFETY_RECIPIENT
-* MAIL_DEFAULT_RECIPIENT
-* MAIL_DEFAULT_RECIPIENT_PUBLIC
-* MAIL_DEFAULT_TYPE
-* MAIL_FROM_ADDRESS
-* MAIL_DEFAULT_SENDER_NAME
-* MAIL_FROM_ADDRESS_PUBLIC
+* MAILORA_SAFETY_RECIPIENT
+* MAILORA_DEFAULT_RECIPIENT
+* MAILORA_APPROVED_FROM_PUBLIC_RECIPIENTS
+* MAILORA_DEFAULT_ADMIN
+* MAILORA_DEFAULT_TYPE
+* MAILORA_NAME_OF_PROD_ENV
+* MAILORA_DEFAULT_TYPE
+* MAILORA_PUBLIC_FREE_FOR_ALL
 
 But you don't need to. It's better to just set the values for production in the config file, commit that, and then use the environmental variables for local as per below.
 
@@ -335,15 +318,15 @@ $.ajax({
 
 #### 2.1.2 - Request Parameters
 
-| param type (path\|query\|body) |  key            |  required |  default                                                      |  description\|notes                               | 
-|--------------------------------|-----------------|-----------|---------------------------------------------------------------|---------------------------------------------------| 
-| body                           | subject         | no        | value returned by `config('mailora.defaults.subject')`        |                                                   | 
-| body                           | sender-address  | no        | value returned by `config('mailora.defaults.sender-address')` |                                                   | 
-| body                           | sender-name     | no        | value returned by `config('mailora.defaults.sender-name')`    | will not be used unless "sender-address" provided | 
-| body                           | reply-to        | no        | `null`                                                        |                                                   | 
-| body                           | type            | no        |  'general'                                                    |                                                   | 
-| body                           | error-message   | no        | `null`                                                        |                                                   | 
-| body                           | success-message | no        | `null`                                                        |                                                   | 
+<!-- UPDATED TABLE GOES HERE -->
+<!-- UPDATED TABLE GOES HERE -->
+<!-- UPDATED TABLE GOES HERE -->
+**(TABLE MISSING!!)**
+**(TABLE MISSING!!)**
+**(TABLE MISSING!!)**
+<!-- UPDATED TABLE GOES HERE -->
+<!-- UPDATED TABLE GOES HERE -->
+<!-- UPDATED TABLE GOES HERE -->
 
 <!-- donatstudios.com/CsvToMarkdownTable
 param type (path\|query\|body), key, required, default, description\|notes
@@ -409,16 +392,15 @@ $.ajax({
 
 #### 2.2.2 - Request Parameters
 
-| path\|query\|body |  key              |  required |  default                                                      |  description\|notes                                | 
-|-------------------|-------------------|-----------|---------------------------------------------------------------|----------------------------------------------------| 
-| body              | recipient-address |  no       | value returned by `config('mailora.defaults.recipient')`      |                                                    | 
-| body              | subject           |  no       | value returned by `config('mailora.defaults.subject')`        |                                                    | 
-| body              | sender-address    |  no       | value returned by `config('mailora.defaults.sender-address')` |                                                    | 
-| body              | sender-name       |  no       | value returned by `config('mailora.defaults.sender-name')`    |  will not be used unless "sender-address" provided | 
-| body              | reply-to          |  no       |  `null`                                                       |                                                    | 
-| body              | type              |  no       |  'general'                                                    |                                                    | 
-| body              | error-message     |  no       |  `null`                                                       |                                                    | 
-| body              | success-message   |  no       |  `null`                                                       |                                                    | 
+<!-- UPDATED TABLE GOES HERE -->
+<!-- UPDATED TABLE GOES HERE -->
+<!-- UPDATED TABLE GOES HERE -->
+**(TABLE MISSING!!)**
+**(TABLE MISSING!!)**
+**(TABLE MISSING!!)**
+<!-- UPDATED TABLE GOES HERE -->
+<!-- UPDATED TABLE GOES HERE -->
+<!-- UPDATED TABLE GOES HERE -->
 
 <!-- donatstudios.com/CsvToMarkdownTable
 path\|query\|body, key, required, default, description\|notes
@@ -430,6 +412,7 @@ body,reply-to, no, `null`
 body,type, no, 'general'
 body,error-message, no, `null`
 body,success-message, no, `null`
+body,users-email-set-reply-to,no,`null`
 -->
 
 #### 2.2.3 - Response Example

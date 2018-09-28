@@ -67,6 +67,7 @@ class MailService
 
         }
     }
+
     /**
      * @param $input array
      * @param $returnExceptionObjectOnFailure null|bool
@@ -95,31 +96,17 @@ class MailService
      */
     private function makeEmailObject($input)
     {
-        if(auth()->user()){
-            $input['user'] = auth()->user();
-        }
-        $input['message'] = !empty($input['message']) ? $input['message'] : '';
-        $type = !empty($input['type']) ? $input['type'] : 'general';
+        $type = !empty($input['type']) ? $input['type'] : config('mailora.defaults.type');
 
         $email = $this->getEmailInstance($input, $type);
 
         $this->setSender($input, $email);
         $this->setRecipient($input, $email);
         $this->setSubject($input, $email);
+        $this->setReplyTo($input, $email);
 
-        if($input['reply-to'] !== null){
-            /*
-             * to not have a reply-to set, pass a boolean false. Passing no string will result in that being set as
-             * reply-to, otherwise, the user's email address will be set.
-             */
-            if($input['reply-to'] !== false){
-                $email->replyTo($input['reply-to']);
-            }
-        }else{
-            if($input['user']){
-                $email->replyTo($input['user']->email);
-            }
-        }
+        // if no message defined, make sure email doesn't break
+        $input['message'] = !empty($input['message']) ? $input['message'] : '';
 
         return $email;
     }
@@ -213,5 +200,16 @@ class MailService
         }
 
         $email->subject($subject);
+    }
+
+    private function setReplyTo($input, Mailable &$email){
+        if(!empty($input['reply-to'])){
+            $email->replyTo($input['reply-to']);
+        }else{
+            $user = auth()->user();
+            if($user && config('mailora.defaults.users-email-set-reply-to')){
+                $email->replyTo($user->email);
+            }
+        }
     }
 }
