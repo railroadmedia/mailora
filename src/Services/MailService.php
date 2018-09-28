@@ -103,22 +103,6 @@ class MailService
 
         $email = $this->getEmailInstance($input, $type);
 
-        if($type === 'ime-question'){
-            $input['recipient-address'] = 'jared+ime_2018@drumeo.com';
-        }
-
-        if($type === 'support'){
-            $input['recipient-address'] = 'support@drumeo.com';
-        }
-
-        if($type === 'ask-question'){
-            $input['recipient-address'] = 'questions@drumeo.com';
-        }
-
-        if($type === 'student-focus-application'){
-            $input['recipient-address'] = 'questions@drumeo.com';
-        }
-
         $this->setSender($input, $email);
         $this->setRecipient($input, $email);
         $this->setSubject($input, $email);
