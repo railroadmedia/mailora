@@ -92,7 +92,7 @@ class MailService
      */
     private function makeEmailObject($input)
     {
-        $email = $this->getEmailInstance($input);
+        $email = $this->getMailable($input);
 
         if($email === false){
             return false;
@@ -114,7 +114,7 @@ class MailService
      *
      * @return Mailable|bool $email
      */
-    private function getEmailInstance($input)
+    private function getMailable($input)
     {
         $emailClass = null;
         $customNamespace = $this->getCustomNamespace();
@@ -299,11 +299,7 @@ class MailService
             $namespace = $customNamespace;
         }
 
-        if($type === 'general'){
-            $potentialClass = $namespace . 'General';
-        }else{
-            $potentialClass = $namespace . $this->dashesToCamelCase($type, true);
-        }
+        $potentialClass = $namespace . $this->dashesToCamelCase($type, true);
 
         // set to custom if provided
         if(class_exists($potentialClass)){
@@ -312,7 +308,7 @@ class MailService
 
         if(!$emailClass){
             $this->error('$emailClass ( ' . var_export($emailClass, true) .
-                ') was not defined in \Railroad\Mailora\Services\MailService::getEmailInstance');
+                ') was not defined in \Railroad\Mailora\Services\MailService::getMailable');
             return false;
         }
 
