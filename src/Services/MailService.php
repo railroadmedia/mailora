@@ -75,7 +75,7 @@ class MailService
         try{
             Mail::send($email);
         }catch(Exception $exception){
-            error_log(
+            $this->error(
                 'Email failed with message: "' . $exception->getMessage() . '". Email input ' .
                 '(passed through json_encode): "' . json_encode($input) . '"'
             );
@@ -111,100 +111,87 @@ class MailService
 
     /**
      * @param $input
-     * @param $type
      *
      * @return Mailable|bool $email
      */
     private function getEmailInstance($input)
     {
-        // 0. get custom-namespace
-
-        // Ensure config-provided custome namespace has backslash on end.
-        $customNamespace = config('mailora.mailables-namespace');
-        if(!empty($customNamespace)){
-            $endsWithBackslash = substr($customNamespace, -1) === '\\';
-            if(!$endsWithBackslash){
-                $customNamespace = $customNamespace . '\\';
-            }
-        }
-
-        // 1. get type
-
-        $type = config('mailora.defaults.type');
-
-        if(!empty($input['type'])){
-            $type = $input['type'];
-        }
+        $emailClass = null;
+        $customNamespace = $this->getCustomNamespace();
+        $customViewsDirectory = $this->getCustomViewsDirectory();
+        $type = $this->getEmailType($input);
 
         // 2. get views and classes
 
+        // 2.1. if "general"
         if($type === 'general'){
 
-            // default to native version
-            $view = '/laravel/vendor/railroad/mailora/resources/views/general.blade.php'; // how to best specify this path??
-            $view = '/laravel/vendor/railroad/mailora/resources/views/general.blade.php'; // how to best specify this path??
-            $view = '/laravel/vendor/railroad/mailora/resources/views/general.blade.php'; // how to best specify this path??
-            $view = '/laravel/vendor/railroad/mailora/resources/views/general.blade.php'; // how to best specify this path??
-            $view = '/laravel/vendor/railroad/mailora/resources/views/general.blade.php'; // how to best specify this path??
-            $view = '/laravel/vendor/railroad/mailora/resources/views/general.blade.php'; // how to best specify this path??
-            $emailClass = '\Railroad\Mailora\Mail\General';
+            // 2.1.1. default to native version of view
+            $view = base_path() . '/vendor/railroad/mailora/resources/views/general.blade.php';
+            if(!file_exists($view)){
+                $this->error('package general view file not found at ' . $view);
+            }
 
-            $viewFileExists = file_exists($view); // why doesn't this work? How to best define ↑↑↑↑↑↑ 
-            $viewFileExists = file_exists($view); // why doesn't this work? How to best define ↑↑↑↑↑↑
-            $viewFileExists = file_exists($view); // why doesn't this work? How to best define ↑↑↑↑↑↑
-            $viewFileExists = file_exists($view); // why doesn't this work? How to best define ↑↑↑↑↑↑
-            $viewFileExists = file_exists($view); // why doesn't this work? How to best define ↑↑↑↑↑↑
-            $viewFileExists = file_exists($view); // why doesn't this work? How to best define ↑↑↑↑↑↑
-            $viewFileExists = file_exists($view); // why doesn't this work? How to best define ↑↑↑↑↑↑
-            $viewFileExists = file_exists($view); // why doesn't this work? How to best define ↑↑↑↑↑↑
-            $viewFileExists = file_exists($view); // why doesn't this work? How to best define ↑↑↑↑↑↑
-            $viewFileExists = file_exists($view); // why doesn't this work? How to best define ↑↑↑↑↑↑
-            $viewFileExists = file_exists($view); // why doesn't this work? How to best define ↑↑↑↑↑↑
-            $viewFileExists = file_exists($view); // why doesn't this work? How to best define ↑↑↑↑↑↑
-            $viewFileExists = file_exists($view); // why doesn't this work? How to best define ↑↑↑↑↑↑
-            $viewFileExists = file_exists($view); // why doesn't this work? How to best define ↑↑↑↑↑↑
-
-            // assuming (class_exists($emailClass) === true) ...
-
-            // overwrite with custom if provided
-            $customGeneralView = config('mailora.views-directory') . '/' . $type . '.blade.php';
+            // 2.1.3. overwrite view with custom one if provided
+            $customGeneralView = $customViewsDirectory . '/' . $type . '.blade.php';
             if (file_exists($customGeneralView)) {
                 $view = $customGeneralView;
             }
 
-            // see if custom General Mailable class exists
-            if($customNamespace){
+            // 2.1.2. default to native version of Mailable class
+            $emailClass = '\Railroad\Mailora\Mail\General';
+            if(!class_exists($emailClass)){
+                $this->error('package general Mailable class ( ' . $emailClass . ') not found');
+            }
+
+            // 2.1.4. overwrite Mailable class with custom one if provided
+            // -----------------------------------------------------------
+
+            // 2.1.4.1. default to laravel standard namespace
+            $customGeneralClass = 'App\Mail\\' . 'General';
+
+            // 2.1.4.2. use custom namespace if provided
+            if($customNamespace) {
                 $customGeneralClass = $customNamespace . 'General';
-                if(class_exists($customGeneralClass)){
-                    $emailClass = $customGeneralClass;
-                }
+            }
+
+            // 2.1.4.3. set to custom if provided
+            if(class_exists($customGeneralClass)){
+                $emailClass = $customGeneralClass;
             }
 
         }else{ // if $type !== 'general'
 
             // get view
-            $customPotentialView = $_SERVER["DOCUMENT_ROOT"] . config('mailora.views-directory') . '/' . $type . '.blade.php';
+            $customPotentialView = $customViewsDirectory . $type . '.blade.php';
             if (file_exists($customPotentialView)) {
                 $view = $customPotentialView;
             }else{
                 $message = 'Custom type specified does have corresponding custom view. Email not sent. ';
                 $message .= json_encode($input);
-                error_log($message);
-                $this->sendErrorMessageToAdmin($message);
+                $this->error($message);
                 return false;
             }
 
             // get class
             $potentialClass = $this->dashesToCamelCase($type, true);
+
+            $customClassForCustomType = 'App\Mail\\' . $potentialClass;
             if($customNamespace){
                 $customClassForCustomType = $customNamespace . $potentialClass;
-                if(class_exists($customClassForCustomType)){
-                    $emailClass = $customClassForCustomType;
-                }
+            }
+            if(class_exists($customClassForCustomType)){
+                $emailClass = $customClassForCustomType;
             }
         }
 
         // 3. create Mailable instance
+
+        if(!$emailClass){
+            $this->error('$emailClass ( ' . var_export($emailClass, true) .
+                ') was not defined in \Railroad\Mailora\Services\MailService::getEmailInstance');
+            return false;
+        }
 
         return new $emailClass($input, $view);
     }
@@ -289,9 +276,47 @@ class MailService
         return $str;
     }
 
-    private function sendErrorMessageToAdmin($message){
-        // todo maybe?
-        // todo maybe?
-        // todo maybe?
+    private function error($message){
+        error_log($message);
+
+        if(config('mailora.admin')){
+            $adminEmailAddressToSendMessageTo = config('mailora.admin');
+            // todo: send email with $message
+        }
+    }
+
+    private function ensureSlashes(&$string, $backslashes = false){
+        $slash = $backslashes ? '\\' : '/';
+
+        if($string){
+            $startsWithForwardSlash = substr($string, 0, 1) === $slash;
+            if(!$startsWithForwardSlash){
+                $string = $slash . $string;
+            }
+            $endsWithForwardSlash = substr($string, -1) === $slash;
+            if(!$endsWithForwardSlash){
+                $string = $string . $slash;
+            }
+        }
+    }
+
+    private function getCustomViewsDirectory(){
+        $customViewsDirectory = config('mailora.views-directory');
+        $this->ensureSlashes($customViewsDirectory);
+        return base_path() . $customViewsDirectory;
+    }
+
+    private function getCustomNamespace(){
+        $customNamespace = config('mailora.mailables-namespace');
+        $this->ensureSlashes($customNamespace, true);
+        return $customNamespace;
+    }
+
+    private function getEmailType($input){
+        $type = config('mailora.defaults.type');
+        if(!empty($input['type'])){
+            $type = $input['type'];
+        }
+        return $type;
     }
 }
