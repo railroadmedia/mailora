@@ -10,15 +10,18 @@ use Illuminate\Contracts\Queue\ShouldQueue;
 class General extends Mailable
 {
     use Queueable, SerializesModels;
+    public $input;
 
     /**
      * Create a new message instance.
      *
-     * @return void
+     * @param $input
+     * @param $view
      */
-    public function __construct()
+    public function __construct($input, $view)
     {
-        //
+        $this->input = $input;
+        $this->view = $view;
     }
 
     /**
@@ -28,6 +31,6 @@ class General extends Mailable
      */
     public function build()
     {
-        return $this->view('view.name');
+        return $this->view($this->view);
     }
 }
