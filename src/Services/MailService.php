@@ -273,6 +273,18 @@ class MailService
             }
         }
 
+        // todo: ↓↓↓ needed?
+        // todo: ↓↓↓ needed?
+        // todo: ↓↓↓ needed?
+        // remove first character if slash
+//        $firstChar = substr($view, 0, 1);
+//
+//        if($firstChar === '/' || $firstChar === '\\'){
+//            $view = substr($view, 1);
+//        }
+//
+//        $view = str_replace('/', '.', $view);
+
         return $view;
     }
 
