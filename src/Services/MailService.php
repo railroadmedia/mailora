@@ -2,7 +2,6 @@
 
 namespace Railroad\Mailora\Services;
 
-use App\Mail\General;
 use Exception;
 use Illuminate\Mail\Mailable;
 use Illuminate\Support\Facades\Mail;
@@ -256,7 +255,7 @@ class MailService
 
     private function getView($customViewsDirectory, $type = 'general', $input)
     {
-        $view = base_path() . '/vendor/railroad/mailora/resources/views/general.blade.php';
+        $view = 'mailora::general';
         if(!file_exists($view)){
             $this->error('package general view file not found at ' . $view);
         }
@@ -290,9 +289,6 @@ class MailService
 
         // default to standard namespace
         $namespace = 'App\Mail\\';
-
-        // default to laravel standard namespace
-        $emailClass = $namespace . 'General';
 
         // use custom namespace if provided
         if($customNamespace) {

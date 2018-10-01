@@ -19,7 +19,7 @@ class MailoraServiceProvider extends ServiceProvider
             ]
         );
         $this->loadRoutesFrom(__DIR__.'/../../routes/mailora.php');
-        $this->loadViewsFrom(__DIR__ . '../../resources/views', 'mailora');
+        $this->loadViewsFrom(__DIR__ . '/../../resources/views', 'mailora');
     }
 
     /**
