@@ -120,76 +120,10 @@ class MailService
         $customNamespace = $this->getCustomNamespace();
         $customViewsDirectory = $this->getCustomViewsDirectory();
         $type = $this->getEmailType($input);
+        $view = $this->getView($customViewsDirectory, $type);
+        $emailClass = $this->getEmailClass($customNamespace, $type);
 
-        // 2. get views and classes
-
-        // 2.1. if "general"
-        if($type === 'general'){
-
-            // 2.1.1. default to native version of view
-            $view = base_path() . '/vendor/railroad/mailora/resources/views/general.blade.php';
-            if(!file_exists($view)){
-                $this->error('package general view file not found at ' . $view);
-            }
-
-            // 2.1.3. overwrite view with custom one if provided
-            $customGeneralView = $customViewsDirectory . '/' . $type . '.blade.php';
-            if (file_exists($customGeneralView)) {
-                $view = $customGeneralView;
-            }
-
-            // 2.1.2. default to native version of Mailable class
-            $emailClass = '\Railroad\Mailora\Mail\General';
-            if(!class_exists($emailClass)){
-                $this->error('package general Mailable class ( ' . $emailClass . ') not found');
-            }
-
-            // 2.1.4. overwrite Mailable class with custom one if provided
-            // -----------------------------------------------------------
-
-            // 2.1.4.1. default to laravel standard namespace
-            $customGeneralClass = 'App\Mail\\' . 'General';
-
-            // 2.1.4.2. use custom namespace if provided
-            if($customNamespace) {
-                $customGeneralClass = $customNamespace . 'General';
-            }
-
-            // 2.1.4.3. set to custom if provided
-            if(class_exists($customGeneralClass)){
-                $emailClass = $customGeneralClass;
-            }
-
-        }else{ // if $type !== 'general'
-
-            // get view
-            $customPotentialView = $customViewsDirectory . $type . '.blade.php';
-            if (file_exists($customPotentialView)) {
-                $view = $customPotentialView;
-            }else{
-                $message = 'Custom type specified does have corresponding custom view. Email not sent. ';
-                $message .= json_encode($input);
-                $this->error($message);
-                return false;
-            }
-
-            // get class
-            $potentialClass = $this->dashesToCamelCase($type, true);
-
-            $customClassForCustomType = 'App\Mail\\' . $potentialClass;
-            if($customNamespace){
-                $customClassForCustomType = $customNamespace . $potentialClass;
-            }
-            if(class_exists($customClassForCustomType)){
-                $emailClass = $customClassForCustomType;
-            }
-        }
-
-        // 3. create Mailable instance
-
-        if(!$emailClass){
-            $this->error('$emailClass ( ' . var_export($emailClass, true) .
-                ') was not defined in \Railroad\Mailora\Services\MailService::getEmailInstance');
+        if(!$emailClass || !$view){
             return false;
         }
 
@@ -318,5 +252,70 @@ class MailService
             $type = $input['type'];
         }
         return $type;
+    }
+
+    private function getView($customViewsDirectory, $type = 'general', $input)
+    {
+        $view = base_path() . '/vendor/railroad/mailora/resources/views/general.blade.php';
+        if(!file_exists($view)){
+            $this->error('package general view file not found at ' . $view);
+        }
+
+        // 2.1.3. overwrite view with custom one if provided
+        $customPotentialView = $customViewsDirectory . '/' . $type . '.blade.php';
+        if (file_exists($customPotentialView)) {
+            $view = $customPotentialView;
+        }else{
+            if($type !== 'general'){
+                $message = 'Custom type specified does have corresponding custom view. Email not sent. ';
+                $message .= json_encode($input);
+                $this->error($message);
+                return false;
+            }
+        }
+
+        return $view;
+    }
+
+    private function getEmailClass($customNamespace, $type = 'general')
+    {
+        $potentialClass = null;
+
+        // default to native version of Mailable class
+        $emailClass = '\Railroad\Mailora\Mail\General';
+
+        if(!class_exists($emailClass)){
+            $this->error('package general Mailable class ( ' . $emailClass . ') not found');
+        }
+
+        // default to standard namespace
+        $namespace = 'App\Mail\\';
+
+        // default to laravel standard namespace
+        $emailClass = $namespace . 'General';
+
+        // use custom namespace if provided
+        if($customNamespace) {
+            $namespace = $customNamespace;
+        }
+
+        if($type === 'general'){
+            $potentialClass = $namespace . 'General';
+        }else{
+            $potentialClass = $namespace . $this->dashesToCamelCase($type, true);
+        }
+
+        // set to custom if provided
+        if(class_exists($potentialClass)){
+            $emailClass = $potentialClass;
+        }
+
+        if(!$emailClass){
+            $this->error('$emailClass ( ' . var_export($emailClass, true) .
+                ') was not defined in \Railroad\Mailora\Services\MailService::getEmailInstance');
+            return false;
+        }
+
+        return $emailClass;
     }
 }
