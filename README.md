@@ -53,19 +53,15 @@ or add to composer.json
 }
 ```
 
+and then run `composer update railroad/mailora`.
+
 (I'm not sure what to do regarding specifying which version to use. Maybe just use "dev-master"?)
 
 run `php artisan vendor:publish`
 
 This will copy view files, the configuration file, and the routes file from the package into your application. Commit these additions.
 
-<!-- todo: is that everything? (views files, config file, route file) -->
-<!-- todo: is that everything? (views files, config file, route file) -->
-<!-- todo: is that everything? (views files, config file, route file) -->
-<!-- todo: is that everything? (views files, config file, route file) -->
-<!-- todo: is that everything? (views files, config file, route file) -->
-<!-- todo: is that everything? (views files, config file, route file) -->
-
+TODO: IS THIS EVERYTHING ?
 
 ### 1.2 - Config for production
 
@@ -93,40 +89,49 @@ Provide values for the following fields.
 
 They are defaults when no other value is provided by the request (or any programmatic means on route to the sending—in a specialized "Mailable" class type for example). This is useful if many there are many places in your application  are sending emails destined for single email address. In such cases, you don't have to then specify the recipient-address. Just leave it blank knowing the Mailora installation is configured to send everything without a recipient-address to that address.
 
-<!-- UPDATED TABLE GOES HERE -->
-<!-- UPDATED TABLE GOES HERE -->
-<!-- UPDATED TABLE GOES HERE -->
-**(TABLE MISSING!!)**
-**(TABLE MISSING!!)**
-**(TABLE MISSING!!)**
-<!-- UPDATED TABLE GOES HERE -->
-<!-- UPDATED TABLE GOES HERE -->
-<!-- UPDATED TABLE GOES HERE -->
-
-<-- ↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓ UPDATE according to config/mailora.php changes ↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓ -->
-<-- ↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓ UPDATE according to config/mailora.php changes ↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓ -->
-<-- ↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓ UPDATE according to config/mailora.php changes ↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓ -->
-
+| key                               | requires app-specific config values | notes regarding requirement                                                       | description                                                                                                                                                                                                                       | 
+|-----------------------------------|-------------------------------------|-----------------------------------------------------------------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------| 
+| safety-recipient                  | yes                                 | nothing will work without this                                                    | email to send to when environment is not production                                                                                                                                                                               | 
+| approved-from-public-recipients   | yes\*                               | required for public-route functionality                                           | list (array) of email addresses that emails can be sent to when publicly-available route is used                                                                                                                                  | 
+| auth_middleware                   | yes\*                               | required for auth-protected-route functionality                                   | names of your applications authentication middleware behind which you wish to guard the totally open *not* publicly-accessible route                                                                                              | 
+| views-directory                   | no\*                                | no change required unless view files created use non-standard path                |  path of directory with your applications custom email templates. From application root (as returned by Laravel's `base_path()` helper)                                                                                           | 
+| mailables-namespace               | no\*                                | no change required unless classes created use non-standard namespace              |  namespace of Mailable classes in your application.                                                                                                                                                                               | 
+| name-of-production-env            | no\*                                |  no change required unless your production environment is not called "production" | if application's "environment" is anything other than this value then emails will only be sent to the address provided by the "safety-recipient" config value                                                                     | 
+| public-free-for-all               |                                     |                                                                                   | `true` would allow public-route to have "send-to" address specified in request. Creates a publicly accessible free-email-sending service that's ripe for exploitation should anybody discover it. You probably shouldn't do this. | 
+| admin                             |                                     |                                                                                   | email address to send errors messages to                                                                                                                                                                                          | 
+| defaults.sender-address           | yes                                 | nothing will work without this                                                    | if no sender-address specified in request use this one                                                                                                                                                                            | 
+| defaults.sender-name              |                                     |                                                                                   | if no sender-name *and* no sender-address specified in request use this name. Will not apply to requests where sender-address supplied.                                                                                           | 
+| defaults.recipient-address        | yes                                 | nothing will work without this                                                    | if no recipient-address specified in request use this one                                                                                                                                                                         | 
+| defaults.subject                  |                                     |                                                                                   | if no subject specified in request use this one. If this not configured package hard-coded default used.                                                                                                                          | 
+| defaults.success-message          |                                     |                                                                                   | if no recipient-address specified in request use this one If this not configured package hard-coded default used.                                                                                                                 | 
+| defaults.error-message            |                                     |                                                                                   | if no error-message specified in request use this one If this not configured package hard-coded default used.                                                                                                                     | 
+| defaults.type                     |                                     |                                                                                   | if no type specified in request use this one If this not configured package hard-coded default used.                                                                                                                              | 
+| defaults.users-email-set-reply-to |                                     |                                                                                   | if authentication-protected route used and no reply-to address provided in request user's email address is set as reply-to                                                                                                        | 
+ 
 <!-- donatstudios.com/CsvToMarkdownTable
-field,example,notes
-recipient-address,"support@your-domain.com"
-recipient-address-public,"support+pub@your-domain.com"
-admin,"dev+email-system-msg@your-domain.com"
-subject,"General Inquiry"
-sender-address,"system@your-domain.com"
-sender-name,"Your Domain",(See "Note 1" below)
-sender-public,"system+pub@your-domain.com",(See "Note 2" below)
-success-message,"Email friggen sent!", 
-error-message,"Oh noes!",
-production,"production",(See "Note 3" below)
-public-free-for-all,false,(See "Note 4" below)
-approved-from-public-recipients,(see example in "Note 5" below)
-users-email-set-reply-to,true, (See "Note 6" below)
+key,requires app-specific config values,notes regarding requirement,description
+safety-recipient,yes,nothing will work without this,email to send to when environment is not production
+approved-from-public-recipients,yes\*,required for public-route functionality,list (array) of email addresses that emails can be sent to when publicly-available route is used
+auth_middleware,yes\*,required for auth-protected-route functionality,names of your applications authentication middleware behind which you wish to guard the totally open *not* publicly-accessible route
+views-directory,no\*,no change required unless view files created use non-standard path, path of directory with your applications custom email templates. From application root (as returned by Laravel's `base_path()` helper)
+mailables-namespace,no\*,no change required unless classes created use non-standard namespace, namespace of Mailable classes in your application.
+name-of-production-env,no\*, no change required unless your production environment is not called "production",if application's "environment" is anything other than this value then emails will only be sent to the address provided by the "safety-recipient" config value
+public-free-for-all,,,`true` would allow public-route to have "send-to" address specified in request. Creates a publicly accessible free-email-sending service that's ripe for exploitation should anybody discover it. You probably shouldn't do this.
+admin,,,email address to send errors messages to
+defaults.sender-address,yes,nothing will work without this,if no sender-address specified in request use this one
+defaults.sender-name,,,if no sender-name *and* no sender-address specified in request use this name. Will not apply to requests where sender-address supplied.
+defaults.recipient-address,yes,nothing will work without this,if no recipient-address specified in request use this one
+defaults.subject,,,if no subject specified in request use this one. If this not configured package hard-coded default used.
+defaults.success-message,,,if no recipient-address specified in request use this one If this not configured package hard-coded default used.
+defaults.error-message,,,if no error-message specified in request use this one If this not configured package hard-coded default used.
+defaults.type,,,if no type specified in request use this one If this not configured package hard-coded default used.
+defaults.users-email-set-reply-to,,,if authentication-protected route used and no reply-to address provided in request user's email address is set as reply-to
 -->
 
-Note 1: If sender-name provided but not sender-address then sender-name will not be used. This is so that an unintended use of a "name" on an unrelated.
+\* with caveat—see note
 
-Note 2: This option exists to offer the option to provide the option to easily inform the user that email was sent from publicly-accessible endpoint. If this is not provided it will default to the "sender-address". It is not very important but it may be handy in some cases.
+
+Note 1: If sender-name provided but not sender-address then sender-name will not be used. This is so that an unintended use of a "name" on an unrelated.
 
 Note 3: if environment is anything other than "production", this must be set, otherwise emails will **not** be sent to any email other than that supplied by the "MAIL_SAFETY_RECIPIENT" environmental variable. If that env-var is not set then no emails will send.
 
@@ -154,23 +159,22 @@ In the /config/mailora.php file installed in your application by running `compos
 <?php
 
 return [
-    // 0. REQUIRED For authentication-protected route - See documentation for details
-    'auth_middleware' => [],
-
-    // 1. Some required, some optional...
-    'defaults' => [
-
-        // UPDATE according to config/mailora.php changes
-        // UPDATE according to config/mailora.php changes
-        // UPDATE according to config/mailora.php changes
-        // UPDATE according to config/mailora.php changes
-        // UPDATE according to config/mailora.php changes
-        // UPDATE according to config/mailora.php changes
-        // UPDATE according to config/mailora.php changes
-      
-    ],
+    // update
+    // update
+    // update
+    // update
+    // update
+    // update
+    // update
+    // update
+    // update
+    // update
+    // update
+    // update
 ];
 ```
+
+[Link to config file](https://github.com/railroadmedia/mailora/blob/master/config/mailora.php)
 
 <!-- todo: link to config file -->
 <!-- todo: link to config file -->
@@ -318,15 +322,15 @@ $.ajax({
 
 #### 2.1.2 - Request Parameters
 
-<!-- UPDATED TABLE GOES HERE -->
-<!-- UPDATED TABLE GOES HERE -->
-<!-- UPDATED TABLE GOES HERE -->
-**(TABLE MISSING!!)**
-**(TABLE MISSING!!)**
-**(TABLE MISSING!!)**
-<!-- UPDATED TABLE GOES HERE -->
-<!-- UPDATED TABLE GOES HERE -->
-<!-- UPDATED TABLE GOES HERE -->
+| param type (path\|query\|body) |  key            |  required |  default                                                      |  description\|notes                               | 
+|--------------------------------|-----------------|-----------|---------------------------------------------------------------|---------------------------------------------------| 
+| body                           | subject         | no        | value returned by `config('mailora.defaults.subject')`        |                                                   | 
+| body                           | sender-address  | no        | value returned by `config('mailora.defaults.sender-address')` |                                                   | 
+| body                           | sender-name     | no        | value returned by `config('mailora.defaults.sender-name')`    | will not be used unless "sender-address" provided | 
+| body                           | reply-to        | no        | `null`                                                        |                                                   | 
+| body                           | type            | no        |  'general'                                                    |                                                   | 
+| body                           | error-message   | no        | `null`                                                        |                                                   | 
+| body                           | success-message | no        | `null`                                                        |                                                   | 
 
 <!-- donatstudios.com/CsvToMarkdownTable
 param type (path\|query\|body), key, required, default, description\|notes
@@ -392,15 +396,17 @@ $.ajax({
 
 #### 2.2.2 - Request Parameters
 
-<!-- UPDATED TABLE GOES HERE -->
-<!-- UPDATED TABLE GOES HERE -->
-<!-- UPDATED TABLE GOES HERE -->
-**(TABLE MISSING!!)**
-**(TABLE MISSING!!)**
-**(TABLE MISSING!!)**
-<!-- UPDATED TABLE GOES HERE -->
-<!-- UPDATED TABLE GOES HERE -->
-<!-- UPDATED TABLE GOES HERE -->
+| path\|query\|body |  key                     |  required |  default                                                      |  description\|notes                                | 
+|-------------------|--------------------------|-----------|---------------------------------------------------------------|----------------------------------------------------| 
+| body              | recipient-address        |  no       | value returned by `config('mailora.defaults.recipient')`      |                                                    | 
+| body              | subject                  |  no       | value returned by `config('mailora.defaults.subject')`        |                                                    | 
+| body              | sender-address           |  no       | value returned by `config('mailora.defaults.sender-address')` |                                                    | 
+| body              | sender-name              |  no       | value returned by `config('mailora.defaults.sender-name')`    |  will not be used unless "sender-address" provided | 
+| body              | reply-to                 |  no       |  `null`                                                       |                                                    | 
+| body              | type                     |  no       |  'general'                                                    |                                                    | 
+| body              | error-message            |  no       |  `null`                                                       |                                                    | 
+| body              | success-message          |  no       |  `null`                                                       |                                                    | 
+| body              | users-email-set-reply-to | no        | `null`                                                        |                                                    | 
 
 <!-- donatstudios.com/CsvToMarkdownTable
 path\|query\|body, key, required, default, description\|notes
@@ -473,7 +479,7 @@ Misc notes to incorporate
 If you provide a a "general.blade.php" file in the directory returned by config('mailora.views-directory')...
 
 
-todo: write about how config('mailora.mailables-namespace'
+todo: write about config('mailora.mailables-namespace')
 
 
 todo: need a way to specify laravel root path in case different than standard. ex: drumeo

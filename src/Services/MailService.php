@@ -21,11 +21,11 @@ class MailService
      * @throws Exception
      */
     private function ensureConfigSet(){
-        $recipientSafety = config('mailora.defaults.safety-recipient');
+        $recipientSafety = config('mailora.safety-recipient');
         $senderAddress = config('mailora.defaults.sender-address');
         $senderName = config('mailora.defaults.sender-name');
         $recipientAddress = config('mailora.defaults.recipient-address');
-        $nameOfProductionEnv = config('mailora.defaults.name-of-production-env');
+        $nameOfProductionEnv = config('mailora.name-of-production-env');
 
         if(
             empty($recipientSafety) ||
@@ -54,7 +54,6 @@ class MailService
             throw new Exception(
                 'Required Mailora config (mailora.defaults) values not set (' . implode(', ', $notSet) . ')'
             );
-
         }
     }
 
@@ -65,11 +64,19 @@ class MailService
      * @return bool|Exception
      */
     public function send($input, $returnExceptionObjectOnFailure = false){
-        $email = $this->makeEmailObject($input);
+        $email = $this->getMailable($input);
 
         if($email === false){
             return false;
         }
+
+        $this->setSender($input, $email);
+        $this->setRecipient($input, $email);
+        $this->setSubject($input, $email);
+        $this->setReplyTo($input, $email);
+
+        // if no message defined, make sure email doesn't break
+        $input['message'] = !empty($input['message']) ? $input['message'] : '';
 
         try{
             Mail::send($email);
@@ -86,29 +93,6 @@ class MailService
     // -----------------------------------------------------------
 
     /**
-     * @param $input array
-     * @return Mailable|bool
-     */
-    private function makeEmailObject($input)
-    {
-        $email = $this->getMailable($input);
-
-        if($email === false){
-            return false;
-        }
-
-        $this->setSender($input, $email);
-        $this->setRecipient($input, $email);
-        $this->setSubject($input, $email);
-        $this->setReplyTo($input, $email);
-
-        // if no message defined, make sure email doesn't break
-        $input['message'] = !empty($input['message']) ? $input['message'] : '';
-
-        return $email;
-    }
-
-    /**
      * @param $input
      *
      * @return Mailable|bool $email
@@ -116,11 +100,9 @@ class MailService
     private function getMailable($input)
     {
         $emailClass = null;
-        $customNamespace = $this->getCustomNamespace();
-        $customViewsDirectory = $this->getCustomViewsDirectory();
         $type = $this->getEmailType($input);
-        $view = $this->getView($customViewsDirectory, $type, $input);
-        $emailClass = $this->getEmailClass($customNamespace, $type);
+        $view = $this->getView($type, $input);
+        $emailClass = $this->getEmailClass($type);
 
         if(!$emailClass || !$view){
             return false;
@@ -159,9 +141,9 @@ class MailService
         }
 
         // 1.3 if not prod, discard previous and use safety
-        $production = app()->environment() === config('mailora.defaults.name-of-production-env');
+        $production = app()->environment() === config('mailora.name-of-production-env');
         if(!$production) {
-            $recipientAddress = config('mailora.defaults.safety-recipient');
+            $recipientAddress = config('mailora.safety-recipient');
         }
 
         // PART 2 - set it
@@ -192,7 +174,22 @@ class MailService
             $email->replyTo($input['reply-to']);
         }else{
             $user = auth()->user();
-            if($user && config('mailora.defaults.users-email-set-reply-to')){
+
+            $requestDoesNotSpecify = true;
+            $requestSaysToAllow = null;
+
+            if(!empty($input['users-email-set-reply-to'])){
+                $requestSaysToAllow = $input['users-email-set-reply-to'] === 1;
+                $requestDoesNotSpecify = false;
+            }
+
+            if($requestDoesNotSpecify === true){
+                $setUserAsReplyTo = config('mailora.defaults.users-email-set-reply-to');
+            }else{
+                $setUserAsReplyTo = $requestSaysToAllow;
+            }
+
+            if($user && $setUserAsReplyTo){
                 $email->replyTo($user->email);
             }
         }
@@ -233,35 +230,25 @@ class MailService
         }
     }
 
-    private function getCustomViewsDirectory(){
-        $customViewsDirectory = config('mailora.views-directory');
-        $this->ensureSlashes($customViewsDirectory);
-        return base_path() . $customViewsDirectory;
-    }
-
-    private function getCustomNamespace(){
-        $customNamespace = config('mailora.mailables-namespace');
-        $this->ensureSlashes($customNamespace, true);
-        return $customNamespace;
-    }
-
     private function getEmailType($input){
-        $type = config('mailora.defaults.type');
+        $type = config('mailora.defaults.type') ?? 'general';
         if(!empty($input['type'])){
             $type = $input['type'];
         }
         return $type;
     }
 
-    private function getView($customViewsDirectory, $type = 'general', $input)
+    private function getView($type, $input)
     {
         $view = 'mailora::general';
         if(!file_exists($view)){
             $this->error('package general view file not found at ' . $view);
         }
 
-        // 2.1.3. overwrite view with custom one if provided
-        $customPotentialView = $customViewsDirectory . '/' . $type . '.blade.php';
+        $customViewsDirectory = config('mailora.views-directory') ?? '/resources/views/emails';
+        $this->ensureSlashes($customViewsDirectory);
+        $customPotentialView = base_path() . $customViewsDirectory . '/' . $type . '.blade.php';
+
         if (file_exists($customPotentialView)) {
             $view = $customPotentialView;
         }else{
@@ -273,22 +260,10 @@ class MailService
             }
         }
 
-        // todo: ↓↓↓ needed?
-        // todo: ↓↓↓ needed?
-        // todo: ↓↓↓ needed?
-        // remove first character if slash
-//        $firstChar = substr($view, 0, 1);
-//
-//        if($firstChar === '/' || $firstChar === '\\'){
-//            $view = substr($view, 1);
-//        }
-//
-//        $view = str_replace('/', '.', $view);
-
         return $view;
     }
 
-    private function getEmailClass($customNamespace, $type = 'general')
+    private function getEmailClass()
     {
         $potentialClass = null;
 
@@ -299,17 +274,12 @@ class MailService
             $this->error('package general Mailable class ( ' . $emailClass . ') not found');
         }
 
-        // default to standard namespace
-        $namespace = 'App\Mail\\';
+        // get name of class to look for
+        $potentialNamespace = config('mailora.mailables-namespace');
+        $this->ensureSlashes($customNamespace, true);
+        $potentialClass = $potentialNamespace . $this->dashesToCamelCase($type, true);
 
-        // use custom namespace if provided
-        if($customNamespace) {
-            $namespace = $customNamespace;
-        }
-
-        $potentialClass = $namespace . $this->dashesToCamelCase($type, true);
-
-        // set to custom if provided
+        // override default with custom if it exists
         if(class_exists($potentialClass)){
             $emailClass = $potentialClass;
         }
