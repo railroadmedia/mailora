@@ -120,7 +120,7 @@ class MailService
         $customNamespace = $this->getCustomNamespace();
         $customViewsDirectory = $this->getCustomViewsDirectory();
         $type = $this->getEmailType($input);
-        $view = $this->getView($customViewsDirectory, $type);
+        $view = $this->getView($customViewsDirectory, $type, $input);
         $emailClass = $this->getEmailClass($customNamespace, $type);
 
         if(!$emailClass || !$view){
