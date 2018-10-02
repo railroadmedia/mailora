@@ -8,26 +8,24 @@ Table of Contents:
 - [Mailora](#mailora)
   * [1 - Installation and Configuration](#1---installation-and-configuration)
     + [1.1 - Installation](#11---installation)
-    + [1.2 - Config for production](#12---config-for-production)
-      - [1.2.1 - secrets](#121---secrets)
-      - [1.2.2 - non-sensitive](#122---non-sensitive)
+    + [1.2 - Configuration](#12---configuration)
+      - [1.2.1 Laravel-native 'config/mail.php'](#121-laravel-native--config-mailphp-)
+      - [1.2.2  Package provided 'config/mailora.php'](#122--package-provided--config-mailoraphp-)
+      - [1.2.3 - authentication middleware](#123---authentication-middleware)
     + [1.3 - Config for local-development](#13---config-for-local-development)
-  * [2 - API Reference](#2---api-reference)
-    + [2.1 - Send email from anywhere](#21---send-email-from-anywhere)
-      - [2.1.1 - Request Example](#211---request-example)
-      - [2.1.2 - Request Parameters](#212---request-parameters)
-      - [2.1.3 - Response Example](#213---response-example)
-        * [2.1.3.1 -  `{200 OK}`](#2131------200-ok--)
-        * [2.1.3.2 - `{500 Internal Server Error}`](#2132-----500-internal-server-error--)
-    + [2.2 - Send email with authenticated user](#22---send-email-with-authenticated-user)
-      - [2.2.1 - Request Example](#221---request-example)
-      - [2.2.2 - Request Parameters](#222---request-parameters)
-      - [2.2.3 - Response Example](#223---response-example)
-        * [2.2.3.1 - `{200 OK}`](#2231-----200-ok--)
-        * [2.2.3.2 - `{500 Internal Server Error}`](#2232-----500-internal-server-error--)
-  * [3 - Miscellaneous Notes](#3---miscellaneous-notes)
-    + [3.1 - About Customized Messages in Responses](#31---about-customized-messages-in-responses)
-
+  * [2 - Features](#2---features)
+    + [2.1 - send email with POST requests to endpoint](#21---send-email-with-post-requests-to-endpoint)
+    + [2.2 - configure default values for common operations](#22---configure-default-values-for-common-operations)
+    + [2.3 - all-you-can-eat view variables](#23---all-you-can-eat-view-variables)
+    + [2.2 - Easy Custom Views](#22---easy-custom-views)
+      - [2.2.1 Flowchart for class and view to use:](#221-flowchart-for-class-and-view-to-use-)
+  * [3 - API Reference](#3---api-reference)
+    + [3.1 - Send email from anywhere](#31---send-email-from-anywhere)
+      - [3.1.1 - Request Example](#311---request-example)
+      - [3.1.2 - Request Parameters](#312---request-parameters)
+      - [3.1.3 - Response Example](#313---response-example)
+        * [3.1.3.1 -  `{200 OK}`](#3131------200-ok--)
+        * [3.1.3.2 - `{500 Internal Server Error}`](#3132-----500-internal-server-error--)
 
 <!-- ecotrust-canada.github.io/markdown-toc -->
 
@@ -61,39 +59,48 @@ run `php artisan vendor:publish`
 
 This will copy view files, the configuration file, and the routes file from the package into your application. Commit these additions.
 
-TODO: IS THIS EVERYTHING ?
 
-### 1.2 - Config for production
+### 1.2 - Configuration
 
-#### 1.2.1 - secrets
+There are two files to configure. They are both in you application's "config" directory:
 
-Define these in your environmental variables as there is no handling for for them via the config file. They shouldn't committed, thus there's no consideration for that.
+1. 'mail.php'
+1. 'mailora.php'
 
-Provide the required values to your applications config/mail.php file. See Laravel documention for details.
+See more details about each in the two sections below.
 
-Don't commit your MAIL_PASSWORD, but rather supply it as an environmental variable.
+Note that both config files can use [Laravel's "env()" helper function](https://laravel.com/docs/master/helpers#method-env). Thus, you can override a value hardcoded in a config file at any time by supplying an environment variable. This can be useful for alternate configurations for local or staging environments.
 
-Supply as environmental variables to keep secret:
+You can then call these configuration values using [Laravel's config helper](https://laravel.com/docs/master/helpers#method-config)
 
-* "MAIL_PASSWORD"
+Example:
 
-Hardcode these in the config file:
+```php
+// retrieve a value directly using dot notation
+$senderAddress = config('mail.defaults.sender-address');
 
-Configure the 'drive' value of your applications' config/mail.php (can just supply MAIL_DRIVER environmental variable). config/mail.php is a Laravel config file.
+// or retrieve an array and access items as needed.
+$mail = config('mail.defaults');
+$senderName = $mail['sender-name'];
+```
 
-(remember that because the config file uses Laravel's "env()" helper function, you can override a hardcoded value at any time by supplying an environmental variable. This can be useful for alternate configurations for local or staging environments.
+#### 1.2.1 - Laravel-native 'config/mail.php'
 
-#### 1.2.2 - non-sensitive
+This is a Laravel-native file to provide email-sending-service details. This file configures standard Laravel functionality and you can refer to [their documentation for details](https://laravel.com/docs/master/mail).
 
-Provide values for the following fields. 
+Supply the secret for your chosen email service as an environment variable, do not commit the actual value to a config file.
 
-They are defaults when no other value is provided by the request (or any programmatic means on route to the sending—in a specialized "Mailable" class type for example). This is useful if many there are many places in your application  are sending emails destined for single email address. In such cases, you don't have to then specify the recipient-address. Just leave it blank knowing the Mailora installation is configured to send everything without a recipient-address to that address.
+You can hard-code other non-sensitive values in the config file.
+
+#### 1.2.2 - Package provided 'config/mailora.php'
+
+This file is copied from this package to your application's "config" directory by running `artisan vendor:publish`.
 
 | key                               | requires app-specific config values | notes regarding requirement                                                       | description                                                                                                                                                                                                                       | 
 |-----------------------------------|-------------------------------------|-----------------------------------------------------------------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------| 
 | safety-recipient                  | yes                                 | nothing will work without this                                                    | email to send to when environment is not production                                                                                                                                                                               | 
-| approved-from-public-recipients   | yes\*                               | required for public-route functionality                                           | list (array) of email addresses that emails can be sent to when publicly-available route is used                                                                                                                                  | 
-| auth_middleware                   | yes\*                               | required for auth-protected-route functionality                                   | names of your applications authentication middleware behind which you wish to guard the totally open *not* publicly-accessible route                                                                                              | 
+| approved-recipients               | yes\*                               | required for public-route functionality                                           | list (array) of email addresses that emails can be sent to when publicly-available route is used                                                                                                                                  | 
+| auth_middleware                   | yes\*                               | required for auth-protected-route functionality                                   | names of your applications authentication middleware behind which you wish to guard the totally open *not* publicly-accessible route. See next section for more detailed description                                              | 
 | views-directory                   | no\*                                | no change required unless view files created use non-standard path                |  path of directory with your applications custom email templates. From application root (as returned by Laravel's `base_path()` helper)                                                                                           | 
 | mailables-namespace               | no\*                                | no change required unless classes created use non-standard namespace              |  namespace of Mailable classes in your application.                                                                                                                                                                               | 
 | name-of-production-env            | no\*                                |  no change required unless your production environment is not called "production" | if application's "environment" is anything other than this value then emails will only be sent to the address provided by the "safety-recipient" config value                                                                     | 
@@ -111,8 +118,8 @@ They are defaults when no other value is provided by the request (or any program
 <!-- donatstudios.com/CsvToMarkdownTable
 key,requires app-specific config values,notes regarding requirement,description
 safety-recipient,yes,nothing will work without this,email to send to when environment is not production
-approved-from-public-recipients,yes\*,required for public-route functionality,list (array) of email addresses that emails can be sent to when publicly-available route is used
-auth_middleware,yes\*,required for auth-protected-route functionality,names of your applications authentication middleware behind which you wish to guard the totally open *not* publicly-accessible route
+approved-recipients,yes\*,required for public-route functionality,list (array) of email addresses that emails can be sent to when publicly-available route is used
+auth_middleware,yes\*,required for auth-protected-route functionality,names of your applications authentication middleware behind which you wish to guard the totally open *not* publicly-accessible route. See next section for more detailed description
 views-directory,no\*,no change required unless view files created use non-standard path, path of directory with your applications custom email templates. From application root (as returned by Laravel's `base_path()` helper)
 mailables-namespace,no\*,no change required unless classes created use non-standard namespace, namespace of Mailable classes in your application.
 name-of-production-env,no\*, no change required unless your production environment is not called "production",if application's "environment" is anything other than this value then emails will only be sent to the address provided by the "safety-recipient" config value
@@ -130,95 +137,8 @@ defaults.users-email-set-reply-to,,,if authentication-protected route used and n
 
 \* with caveat—see note
 
+[Link to config file template](https://github.com/railroadmedia/mailora/blob/master/config/mailora.php).
 
-Note 1: If sender-name provided but not sender-address then sender-name will not be used. This is so that an unintended use of a "name" on an unrelated.
-
-Note 3: if environment is anything other than "production", this must be set, otherwise emails will **not** be sent to any email other than that supplied by the "MAIL_SAFETY_RECIPIENT" environmental variable. If that env-var is not set then no emails will send.
-
-Note 4: If set to boolean `true`, public endpoint can then take a "recipient-address" body param that is not in the "approved-from-public-recipients" list. 
-
-<!-- todo: yeah? is this really? so? Maybe if not just delete this one -->
-<!-- todo: yeah? is this really? so? Maybe if not just delete this one -->
-<!-- todo: yeah? is this really? so? Maybe if not just delete this one -->
-<!-- todo: yeah? is this really? so? Maybe if not just delete this one -->
-<!-- todo: yeah? is this really? so? Maybe if not just delete this one -->
-<!-- todo: yeah? is this really? so? Maybe if not just delete this one -->
-
-Note 5: Example for "approved-from-public-recipients": `['foo@your-domain.com', 'bar@your-domain.com']`
-
-Note 6: if "users-email-set-reply-to" is true, in requests to the route requiring authentication (where a user is available from Laravel's `auth()->user()`), if no "reply-to" is passed in the request, the user's email address will be set. Note though, that you can also specify in any request to *not* use it—thus overriding a `true` value here only when needed.
-
-In the /config/mailora.php file installed in your application by running `composer install`, replace the empty strings with values for use in production.
-
-
-
-<-- ↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓ UPDATE according to config/mailora.php changes ↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓ -->
-<-- ↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓ UPDATE according to config/mailora.php changes ↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓ -->
-<-- ↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓ UPDATE according to config/mailora.php changes ↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓ -->
-```php
-<?php
-
-return [
-    // update
-    // update
-    // update
-    // update
-    // update
-    // update
-    // update
-    // update
-    // update
-    // update
-    // update
-    // update
-];
-```
-
-[Link to config file](https://github.com/railroadmedia/mailora/blob/master/config/mailora.php)
-
-<!-- todo: link to config file -->
-<!-- todo: link to config file -->
-<!-- todo: link to config file -->
-<!-- todo: link to config file -->
-<!-- todo: link to config file -->
-<!-- todo: link to config file -->
-<!-- todo: link to config file -->
-
-(tf is "auth_middleware" you ask? See the next section)
-
-
-These values in config use [Laravel's "env" function](https://laravel.com/docs/master/helpers#method-env) to use constants provided as environmental variables. If those a constant is null, then the value provided to the "env" function.
-
-
-<!-- todo: ensure "sender" changed to "sender-address" as needed -->
-<!-- todo: ensure "sender" changed to "sender-address" as needed -->
-<!-- todo: ensure "sender" changed to "sender-address" as needed -->
-<!-- todo: ensure "sender" changed to "sender-address" as needed -->
-<!-- todo: ensure "sender" changed to "sender-address" as needed -->
-<!-- todo: ensure "sender" changed to "sender-address" as needed -->
-
-You can then call these configuration values using [Laravel's config helper](https://laravel.com/docs/master/helpers#method-config):
-
-```php
-$senderAddress = config('mail.defaults.sender-address');
-
-$mail = config('mail.defaults');
-
-$senderName = $mail['sender-name'];
-```
-
-Thus, you can provide these as environmental variables:
-
-* MAILORA_SAFETY_RECIPIENT
-* MAILORA_DEFAULT_RECIPIENT
-* MAILORA_APPROVED_FROM_PUBLIC_RECIPIENTS
-* MAILORA_DEFAULT_ADMIN
-* MAILORA_DEFAULT_TYPE
-* MAILORA_NAME_OF_PROD_ENV
-* MAILORA_DEFAULT_TYPE
-* MAILORA_PUBLIC_FREE_FOR_ALL
-
-But you don't need to. It's better to just set the values for production in the config file, commit that, and then use the environmental variables for local as per below.
 
 #### 1.2.3 - authentication middleware
 
@@ -238,38 +158,103 @@ For example, if your app/Http/Kernel.php has:
     ];
 ```
 
-then in config/mailora.php you can have this:
+...then in config/mailora.php you can have something like this:
 
 ```php
 return [
-    'defaults' => [
-        // omitted in the name of brevity
-    ],
-    'auth_middleware' => ['auth', 'auth-special']
+    // ...
+    'auth_middleware' => ['auth', 'auth-special'],
+    // ...
 ];
 ```
 
 ### 1.3 - Config for local-development
 
+Rather than mess around with changes to the config file, because Laravel's `env()` function is used, you can just provide environment variable to override anything hard-coded in the config files. Define values in a ".env" file in your application root. 
 
-Provide values to .env. You can provide any you want, but the only one that you **must** set is "MAIL_SAFETY_RECIPIENT". There are cases when failure to provide a value to this variable will cause no emails to send. See the note above ("Note 3" in section about configuration variable).
-
-It's also recommended to set "MAIL_DEFAULT_RECIPIENT" and "MAIL_FROM_ADDRESS" to avoid confusing and/or spamming your co-workers.
+At a bare minimum, you provide "MAIL_SAFETY_RECIPIENT" so that you're sure of where emails are being sent. Emails will only be sent to that address when the enviroment is is anything other than "production" (or the value returned by config('mailora.name-of-production-env') if it's different than "production");
 
 example:
 
 ```
-MAIL_SAFETY_RECIPIENT=jonathan+recordeo_local_safety_recipient@drumeo.com
-MAIL_DEFAULT_RECIPIENT=jonathan+recordeo_local_default_recipient@drumeo.com
-MAIL_FROM_ADDRESS=system+from_local_dev@recordeo.com
-MAIL_DEFAULT_SENDER_NAME=Recordeo
-MAIL_FROM_ADDRESS_PUBLIC=system+public@recordeo.com
+MAIL_SAFETY_RECIPIENT=jonathan+mailora_dev_SAFETY_RECIPIENT@drumeo.com
 ```
 
-**Especially important is `MAIL_SAFETY_RECIPIENT`**. This ensures that customers (and fellow team members) are not spammed when you're developing locally. When that variable is set, and the environment is *not* production *all* emails go to that specified address. If that variable is not set, no emails will be sent (so long as environment is *not* "production").
+Or supply many values:
+
+```
+MAILORA_SAFETY_RECIPIENT=joe+foo@foo.com
+MAILORA_APPROVED_FROM_PUBLIC_RECIPIENTS=['joe+test89347832@foo.com']
+MAILORA_NAME_OF_PROD_ENV='staging'
+MAILORA_PUBLIC_FREE_FOR_ALL=true
+MAILORA_DEFAULT_ADMIN=joe+bar@foo.com
+MAIL_FROM_ADDRESS=joe+baz@foo.com
+MAIL_FROM_NAME="Joe Black"
+MAILORA_DEFAULT_RECIPIENT=joe+qux@foo.com
+MAILORA_DEFAULT_TYPE='foo'
+```
+
+2 - Features
+---------------------------------------------------------------------
+
+### 2.1 - send email with POST requests to endpoint
+
+To send an email, simply send a POST request as described in these docs. You'll receive a simple "sent" boolean value in response.
 
 
-2 - API Reference
+### 2.2 - configure default values for common operations
+
+Always send to the same email address. Set that as the default in the configuration, and then on requests to send to that address, don't pass a "recipient-address" value. The default will be used.
+
+In fact, **the endpoint has no required parameters**—you can place all required information in the configuration and only provide unique info when required.
+
+### 2.3 - all-you-can-eat view variables
+
+Any parameter you include in a request is available for use in views. Pass `'foo' : 'bar'`? In the view, `{{ $input['foo'] }}` will print `bar`. It's just *that* easy! 
+
+
+### 2.2 - Easy Custom Views
+
+If no 'type' value is provided in a request, the Mailora's General class and general.blade.php view will be used. If a type value is passed, Mailora will look for a class matching the CapitalizedCamelCase version of that value\*. Mailora will look for this class in the namespace returned by `config('mailora.mailables-namespace)`\*\*. If a class exists there, it will be used. If no class is used, Mailora's `General` class will be used. This class is simply uses whatever view supplied, and passes a `$input` parameter along to the view so that all values are retrieved from that.
+
+This enables the following.
+
+Regardless of what class is used—that is to say even if no `Mailable` class was found matching the ConvertedCapitalizedCamelCase 'type' value passed, Mailora will then look for a view file matching that type value. It looks for files in the directory described by the string returned by `config('mailora.views-directory')`\*\*. If one if found, that is used. If not, mailora's general.php is used\*\*\*.
+
+**The upshot of all this is that new email-templates can be created with no back-end modifications required. *Simply create a view file, and supply and retrieve values from the `$input` parameter.***
+
+\* the value `foo-bar-baz` would use the class `FooBarBaz` and the view file "foo-bar-baz.blade.php".
+
+\*\* this is set—and can therefore be changed—in the mailora.php config file
+
+\*\*\* Note that this file exists in "/your-application/vendor/railroad/mailora/resources/views/"
+
+#### 2.2.1 - Flowchart for class and view to use
+
+```
+is type defined in request? → no → use 'general' view and 'General' Mailable class
+↓
+yes
+↓
+is type defined in request as 'general'? → yes → use 'general' view and 'General' Mailable class
+↓
+no
+↓
+is there a Mailable class that matches a CapitalizedCamelCase version of the 'type' value supplied? → yes → use that
+↓
+no
+↓
+use 'General'
+↓
+is there a view file matching the 'type' value passed? → no → use mailora's general.blade.php
+↓
+yes
+↓
+use that
+```
+
+
+3 - API Reference
 ------------------------------
 
 There are two endpoints:
@@ -279,39 +264,43 @@ There are two endpoints:
 
 See details below.
 
+In addition to the parameters listed below, any other parameter can be passed, and it will be available in the view!
 
-### 2.1 - Send email from anywhere
+For example, if you have a `'foo' : 'bar'` item in data for a request, in the view, `{{ $input['foo'] }}` will print "bar".
+
+Another example: `'foo' : 1` in the request will allow `{{ $input['foo'] ? 'true' : 'false' }}` in the view.
+
+
+### 3.1 - Send email from anywhere
 
 `POST /mail/`
 
-Can be called from publicly-exposed. Can be called from anywhere. Handy for sending emails from support and sales pages.
+Can be called from anywhere. Handy for sending emails from publicly-accessible support and sales pages.
 
 Recipient cannot be specified. Will be sent to MAIL_FROM_ADDRESS unless MAIL_FROM_ADDRESS_PUBLIC provided. Though, you can set the "Sender name"<!-- change if below is implemented -->
 
-User must be defined in config file "config/mailora.php". If user is not present there, email will not be send to intended recipient but rather a "unauthorized_recipient" email will be sent to the address provided by c.
+User must be defined in config file "config/mailora.php". If user is not present there, email will not be send to intended recipient.
+ 
+<!-- todo ↓ ↓ ↓ ? -->
+<!-- but rather a "unauthorized_recipient" email will be sent to the address provided by config -->
 
-<!-- todo: implement this -->
-<!-- todo: implement this -->
-<!-- todo: implement this -->
-<!-- todo: implement this -->
-<!-- todo: implement this -->
-<!-- todo: implement this -->
-
-#### 2.1.1 - Request Example
+#### 3.1.1 - Request Example
 
 ```javascript
 let data = {
-    'subject' : 'qux',
-    'sender-address' : 'quux@guuz.com',
-    'sender-name' : 'corge',
-    'reply-to' : 'grault@garply.com',
-    'type' : 'waldo',
-    'error-message' : 'fred',
-    'success-message' : 'plugh',
+    'type' : 'foo',
+    'sender-address' : 'bar@some-domain.com',
+    'sender-name' : 'Baz Qux',
+    'recipient-address' : 'quux@other-domain.com',
+    'recipient-name' : 'Corge Uier',
+    'subject' : 'Grault garply waldo',
+    'reply-to' : 'bar@some-domain.com',
+    'users-email-set-reply-to' : '',
+    'message' : 'Fred plugh thud, mos henk. Def.',
 };
 
 $.ajax({
-    url: 'https://www.foo.com/mailora/mail?' ,
+    url: 'https://www.foo.com/mailora/send' ,
     type: 'get',
     dataType: 'json',
     data: data,
@@ -320,168 +309,66 @@ $.ajax({
 });
 ```
 
-#### 2.1.2 - Request Parameters
+#### 3.1.2 - Request Parameters
 
-| param type (path\|query\|body) |  key            |  required |  default                                                      |  description\|notes                               | 
-|--------------------------------|-----------------|-----------|---------------------------------------------------------------|---------------------------------------------------| 
-| body                           | subject         | no        | value returned by `config('mailora.defaults.subject')`        |                                                   | 
-| body                           | sender-address  | no        | value returned by `config('mailora.defaults.sender-address')` |                                                   | 
-| body                           | sender-name     | no        | value returned by `config('mailora.defaults.sender-name')`    | will not be used unless "sender-address" provided | 
-| body                           | reply-to        | no        | `null`                                                        |                                                   | 
-| body                           | type            | no        |  'general'                                                    |                                                   | 
-| body                           | error-message   | no        | `null`                                                        |                                                   | 
-| body                           | success-message | no        | `null`                                                        |                                                   | 
+Provide all parameters in the request body.
 
-<!-- donatstudios.com/CsvToMarkdownTable
-param type (path\|query\|body), key, required, default, description\|notes
-body,subject,no,value returned by `config('mailora.defaults.subject')`
-body,sender-address,no,value returned by `config('mailora.defaults.sender-address')`
-body,sender-name,no,value returned by `config('mailora.defaults.sender-name')`,will not be used unless "sender-address" provided
-body,reply-to,no,`null`
-body,type,no, 'general'
-body,error-message,no,`null`
-body,success-message,no,`null`
--->
+**Note that no fields are *required*!!**
 
-#### 2.1.3 - Response Example
-
-See the note in the section below "[About Customized Messages in Responses](#about-customized-messages-in-responses)"
-
-##### 2.1.3.1 -  `{200 OK}`
-
-```json
-
-{"success-message":"foo"}
-
-```
-
-##### 2.1.3.2 - `{500 Internal Server Error}`
-
-```json
-
-{"error-message":"foo"}
-
-```
-
-
-
-### 2.2 - Send email with authenticated user
-
-`POST /members/mail/`
-
-
-#### 2.2.1 - Request Example
-
-```javascript
-let data = {
-    'recipient-address' : 'foo@bar.com',
-    'subject' : 'qux',
-    'sender-address' : 'quux@guuz.com',
-    'sender-name' : 'corge',
-    'reply-to' : 'grault@garply.com',
-    'type' : 'waldo',
-    'error-message' : 'fred',
-    'success-message' : 'plugh',
-};
-
-$.ajax({
-    url: 'https://www.foo.com/mailora/members/mail?' ,
-    type: 'get',
-    dataType: 'json',
-    data: data,
-    success: function(response) { /* handle error */ },
-    error: function(response) { /* handle error */ }
-});
-```
-
-#### 2.2.2 - Request Parameters
-
-| path\|query\|body |  key                     |  required |  default                                                      |  description\|notes                                | 
-|-------------------|--------------------------|-----------|---------------------------------------------------------------|----------------------------------------------------| 
-| body              | recipient-address        |  no       | value returned by `config('mailora.defaults.recipient')`      |                                                    | 
-| body              | subject                  |  no       | value returned by `config('mailora.defaults.subject')`        |                                                    | 
-| body              | sender-address           |  no       | value returned by `config('mailora.defaults.sender-address')` |                                                    | 
-| body              | sender-name              |  no       | value returned by `config('mailora.defaults.sender-name')`    |  will not be used unless "sender-address" provided | 
-| body              | reply-to                 |  no       |  `null`                                                       |                                                    | 
-| body              | type                     |  no       |  'general'                                                    |                                                    | 
-| body              | error-message            |  no       |  `null`                                                       |                                                    | 
-| body              | success-message          |  no       |  `null`                                                       |                                                    | 
-| body              | users-email-set-reply-to | no        | `null`                                                        |                                                    | 
+| key                      | required | default can be defined in `config('mailora.default')` | default hardcoded in package so needn't be provided by config | no default | description\|notes                                                                                                                   | 
+|--------------------------|----------|-------------------------------------------------------|---------------------------------------------------------------|------------|--------------------------------------------------------------------------------------------------------------------------------------| 
+| type                     | no       | yes                                                   | `'general'`                                                   |            |                                                                                                                                      | 
+| sender-address           | no       | yes                                                   |                                                               |            | If not provided from request or config email will not be sent.                                                                       | 
+| sender-name              | no       | yes                                                   |                                                               |            | See "Note 1" below                                                                                                                   | 
+| recipient-address        | no       | yes                                                   |                                                               |            | If not provided from request or config email will not be sent.                                                                       | 
+| recipient-name           | no       | yes                                                   |                                                               |            | See "Note 1" below                                                                                                                   | 
+| subject                  | no       | yes                                                   | `'General Inquiry - Subject not specified'`                   |            |                                                                                                                                      | 
+| reply-to                 | no       |                                                       |                                                               | yes        |                                                                                                                                      | 
+| users-email-set-reply-to | no       | yes                                                   | `false`                                                       |            | If no reply-to param supplied in request but a logged in user is available the 'reply-to' will be set with that user's email address | 
+| message                  | no       | yes                                                   | `''` (empty string)                                           |            |                                                                                                                                      | 
 
 <!-- donatstudios.com/CsvToMarkdownTable
-path\|query\|body, key, required, default, description\|notes
-body,recipient-address, no,value returned by `config('mailora.defaults.recipient')`
-body,subject, no,value returned by `config('mailora.defaults.subject')`
-body,sender-address, no,value returned by `config('mailora.defaults.sender-address')`
-body,sender-name, no,value returned by `config('mailora.defaults.sender-name')`, will not be used unless "sender-address" provided
-body,reply-to, no, `null`
-body,type, no, 'general'
-body,error-message, no, `null`
-body,success-message, no, `null`
-body,users-email-set-reply-to,no,`null`
+key,required,default can be defined in `config('mailora.default')`,default hardcoded in package so needn't be provided by config,no default,description\|notes
+type,no,yes,`'general'`,,
+sender-address,no,yes,,,If not provided from request or config email will not be sent.
+sender-name,no,yes,,,See "Note 1" below
+recipient-address,no,yes,,,If not provided from request or config email will not be sent.
+recipient-name,no,yes,,,See "Note 1" below
+subject,no,yes,`'General Inquiry - Subject not specified'`,,
+reply-to,no,,,yes,
+users-email-set-reply-to,no,yes,`false`,,If no reply-to param supplied in request but a logged in user is available the 'reply-to' will be set with that user's email address
+message,no,yes,`''` (empty string),,
 -->
 
-#### 2.2.3 - Response Example
 
-See the note in the section below "[About Customized Messages in Responses](#about-customized-messages-in-responses)"
+Note 1: A provided name is not used unless address also provided from same source. For example: Say sender-address and sender-name are both set in the configuration file. If a request doesn't not specify request-address, then the addresss and name from the config will be used. However, if the request supplies an address bu no name, then that address (from the request) will be used, but not the name from config. The only time the name in the config is used, is when the address in the config is used. The only time a name is used when an address is provided in the request, is if a name is also provided in that request.
 
-##### 2.2.3.1 - `{200 OK}`
 
-```json
+#### 3.1.3 - Response Example
 
-{"success-message":"foo"}
-
-```
-
-##### 2.2.3.2 - `{500 Internal Server Error}`
+##### 3.1.3.1 -  `{200 OK}`
 
 ```json
 
-{"error-message":"foo"}
+{"sent":1}
 
 ```
 
-3 - Miscellaneous Notes
----------------------------------------------------------------------
+##### 3.1.3.2 - `{500 Internal Server Error}`
 
-### 3.1 - About Customized Messages in Responses
+```json
 
-The message returned by responses—whether a 200's "success-message" or a 500's "error-message" default to a value hard-coded in this package. But, they can both be customized. There are two ways to customize these messages:
-
-1. by supplying an installation-specific default in the config file (this will override the hard-coded default). 
-2. Second, by supplying a request-specific value in the request body parameters (this will override any defaults). 
-
-See the flowchart below ↓
+{"sent":0}
 
 ```
-supplied in body params? → yes → use that
-↓
-no
-↓
-supplied in config? → yeah → use that
-↓
-no
-↓
-use the one package default
-```
-
-<!-- todo: link to file with package default. Define it as a static of the class to make it easier to find at the top of the file-->
-<!-- todo: link to file with package default. Define it as a static of the class to make it easier to find at the top of the file-->
-<!-- todo: link to file with package default. Define it as a static of the class to make it easier to find at the top of the file-->
-<!-- todo: link to file with package default. Define it as a static of the class to make it easier to find at the top of the file-->
-<!-- todo: link to file with package default. Define it as a static of the class to make it easier to find at the top of the file-->
-<!-- todo: link to file with package default. Define it as a static of the class to make it easier to find at the top of the file-->
 
 
-Misc notes to incorporate
-----------------------------------------------
+-----------------------------------------------------------------------
 
-If you provide a a "general.blade.php" file in the directory returned by config('mailora.views-directory')...
+<div style='text-align:center'>
 
+*fin*
+    
+<span style='font-size:0.333333333333333333333333333333333em; color:lightgrey'>glhf</span>
 
-todo: write about config('mailora.mailables-namespace')
-
-
-todo: need a way to specify laravel root path in case different than standard. ex: drumeo
-
-
+</div>

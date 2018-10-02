@@ -26,13 +26,15 @@ class MailService
         $senderName = config('mailora.defaults.sender-name');
         $recipientAddress = config('mailora.defaults.recipient-address');
         $nameOfProductionEnv = config('mailora.name-of-production-env');
+        $approvedRecipients = config('mailora.approved-recipients');
 
         if(
             empty($recipientSafety) ||
             empty($senderAddress) ||
             empty($senderName) ||
             empty($recipientAddress) ||
-            empty($nameOfProductionEnv)
+            empty($nameOfProductionEnv) ||
+            empty($approvedRecipients)
         ){
             $notSet = [];
 
@@ -50,6 +52,9 @@ class MailService
             }
             if(empty($nameOfProductionEnv)){
                 $notSet[] = 'name-of-production-env';
+            }
+            if(empty($approvedRecipients)){
+                $notSet[] = 'approved-recipients';
             }
             throw new Exception(
                 'Required Mailora config (mailora.defaults) values not set (' . implode(', ', $notSet) . ')'
@@ -71,7 +76,10 @@ class MailService
         }
 
         $this->setSender($input, $email);
-        $this->setRecipient($input, $email);
+        if(!$this->checkAndSetRecipient($input, $email)){
+            $this->error('Unauthorized recipient attempted. ($input: ' . json_encode($input) . ' )');
+            return false;
+        };
         $this->setSubject($input, $email);
         $this->setReplyTo($input, $email);
 
@@ -128,31 +136,76 @@ class MailService
         $email->from($senderAddress, $senderName);
     }
 
-    private function setRecipient($input, Mailable &$email)
+    private function checkAndSetRecipient($input, Mailable &$email)
     {
+        $approvedRecipients = config('mailora.approved-recipients');
+        if($approvedRecipients){
+            $approvedRecipients = explode(' ', $approvedRecipients);
+        }
+        $approvedRecipientDomains = config('mailora.approved-recipient-domains');
+        if($approvedRecipientDomains){
+            $approvedRecipientDomains = explode(' ', $approvedRecipientDomains);
+        }
+
         // PART 1 - determine value to set as recipient
 
         // 1.1. default to default
-        $recipientAddress = $email->to(config('mailora.defaults.recipient-address'));
+        $recipientAddress = config('mailora.defaults.recipient-address');
+        $recipientName = config('mailora.defaults.recipient-name');
 
         // 1.2 if input provided, use that
         if(!empty($input['recipient-address'])){
             $recipientAddress = $input['recipient-address'];
+            $recipientName = null; // unset because do not want to use default name with request-provided address
+            if(!empty($input['recipient-name'])){
+                $recipientName = $input['recipient-name'];
+            }
         }
 
         // 1.3 if not prod, discard previous and use safety
         $production = app()->environment() === config('mailora.name-of-production-env');
         if(!$production) {
             $recipientAddress = config('mailora.safety-recipient');
+            $recipientName = null; // unset because do not want to incorrectly add name to email
         }
 
         // PART 2 - set it
 
-        if (!empty($input['recipient-name'])) {
-            $email->to($recipientAddress, $input['recipient-name']);
-        }else{ // must use else, or else will set *two* recipients, one with name, one without.
+        // 2.1 ensure allowed
+
+        $approved = false;
+
+        if(!empty($approvedRecipientDomains)){
+            foreach($approvedRecipientDomains as $approvedRecipientDomain){
+                $regexPattern = '^[A-Za-z0-9._%+-]+@' . $approvedRecipientDomain . '$';
+                $match = preg_match($regexPattern, $recipientAddress);
+                if($match){
+                    $approved = true;
+                }
+            }
+        }
+
+        if(!$approved){
+            foreach($approvedRecipients as $approvedRecipient){
+                if($recipientAddress === $approvedRecipient){
+                    $approved = true;
+                }
+            }
+        }
+
+        if(!$approved){
+            return false;
+        }
+
+        // 2.2 set it if allowed
+
+        if ($recipientName) {
+            $email->to($recipientAddress, $recipientName);
+        }else{ // must use *else*, or else will set *two* recipients, one with name, one without.
             $email->to($recipientAddress);
         }
+
+        return true;
     }
 
     private function setSubject($input, Mailable &$email){
@@ -263,7 +316,7 @@ class MailService
         return $view;
     }
 
-    private function getEmailClass()
+    private function getEmailClass($type)
     {
         $potentialClass = null;
 

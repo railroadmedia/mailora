@@ -1,12 +1,11 @@
 <?php
 
 return [
-
     // REQUIRED
     'safety-recipient' => env('MAILORA_SAFETY_RECIPIENT', ''),
 
     // required to make "public" route work
-    'approved-from-public-recipients' => env( 'MAILORA_APPROVED_FROM_PUBLIC_RECIPIENTS', []),
+    'approved-recipients' => env( 'MAILORA_APPROVED_FROM_PUBLIC_RECIPIENTS', []),
 
     // required to make "authentication-protected" route work
     'auth_middleware' => [],
@@ -22,16 +21,16 @@ return [
     'defaults' => [
 
         // 2.0 REQUIRED (either hardcoded here, or provided by environmental variables)
-        'sender-address' => env('MAIL_FROM_ADDRESS', null), // REQUIRED
-        'sender-name' => env('MAIL_FROM_NAME', null), // REQUIRED
-        'recipient-address' => env('MAILORA_DEFAULT_RECIPIENT', null), // REQUIRED
+        'sender-address' => env('MAIL_DEFAULT_SENDER_ADDRESS', null), // REQUIRED
+        'sender-name' => env('MAIL_DEFAULT_SENDER_NAME', null), // REQUIRED
+        'recipient-address' => env('MAILORA_DEFAULT_RECIPIENT_ADDRESS', null), // REQUIRED
 
-        // 2.1 Optional - application-specific defaults for text shown to users
+        // 2.1 Optional
+        'recipient-name' => env('MAILORA_DEFAULT_RECIPIENT_NAME', null),
         'subject' => null,
-        'success-message' => null,
-        'error-message' => null,
+        'message' => null,
 
-        // 2.2 Advanced, see documentation for details
+        // 2.3 Advanced, see documentation for details
         'type' => env('MAILORA_DEFAULT_TYPE', null),
         'users-email-set-reply-to' => true,
     ],
