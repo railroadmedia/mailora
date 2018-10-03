@@ -74,7 +74,7 @@ class MailService
      *
      * @return bool|Exception
      */
-    public function send($input, $returnExceptionObjectOnFailure = false){
+    public function send($input, $returnExceptionObjectOnFailure = false, $returnMailableObject = false){
         $email = $this->getMailable($input);
 
         if($email === false){
@@ -91,6 +91,13 @@ class MailService
 
         // if no message defined, make sure email doesn't break
         $input['message'] = !empty($input['message']) ? $input['message'] : '';
+
+        // ↓↓↓ debugging aide only. DELETE ↓↓↓
+        // ↓↓↓ debugging aide only. DELETE ↓↓↓
+        // ↓↓↓ debugging aide only. DELETE ↓↓↓
+        if($returnMailableObject){
+            return $email;
+        }
 
         try{
             Mail::send($email);
@@ -206,9 +213,9 @@ class MailService
         // 2.2 set it if allowed
 
         if ($recipientName) {
-            $email->to($recipientAddress, $recipientName);
+            $email->to([$recipientAddress, $recipientName]);
         }else{ // must use *else*, or else will set *two* recipients, one with name, one without.
-            $email->to($recipientAddress);
+            $email->to([$recipientAddress]);
         }
 
         return true;
