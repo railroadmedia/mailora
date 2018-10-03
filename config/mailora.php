@@ -22,8 +22,8 @@ return [
     'defaults' => [
 
         // 2.0 REQUIRED (either hardcoded here, or provided by environmental variables)
-        'sender-address' => env('MAIL_DEFAULT_SENDER_ADDRESS', null), // REQUIRED
-        'sender-name' => env('MAIL_DEFAULT_SENDER_NAME', null), // REQUIRED
+        'sender-address' => env('MAILORA_DEFAULT_SENDER_ADDRESS', null), // REQUIRED
+        'sender-name' => env('MAILORA_DEFAULT_SENDER_NAME', null), // REQUIRED
         'recipient-address' => env('MAILORA_DEFAULT_RECIPIENT_ADDRESS', null), // REQUIRED
 
         // 2.1 Optional
