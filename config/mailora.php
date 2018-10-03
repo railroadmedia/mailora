@@ -5,7 +5,8 @@ return [
     'safety-recipient' => env('MAILORA_SAFETY_RECIPIENT', ''),
 
     // required to make "public" route work
-    'approved-recipients' => env( 'MAILORA_APPROVED_FROM_PUBLIC_RECIPIENTS', []),
+    'approved-recipients' => env( 'MAILORA_APPROVED_RECIPIENTS', []),
+    'approved-recipient-domains' => env('MAILORA_APPROVED_RECIPIENT_DOMAINS', []),
 
     // required to make "authentication-protected" route work
     'auth_middleware' => [],

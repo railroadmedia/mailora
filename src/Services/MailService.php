@@ -27,6 +27,7 @@ class MailService
         $recipientAddress = config('mailora.defaults.recipient-address');
         $nameOfProductionEnv = config('mailora.name-of-production-env');
         $approvedRecipients = config('mailora.approved-recipients');
+        $approvedRecipientDomains = config('mailora.approved-recipient-domains');
 
         if(
             empty($recipientSafety) ||
@@ -34,7 +35,7 @@ class MailService
             empty($senderName) ||
             empty($recipientAddress) ||
             empty($nameOfProductionEnv) ||
-            empty($approvedRecipients)
+            (empty($approvedRecipients) && empty($approvedRecipientDomains)) // only one of these required
         ){
             $notSet = [];
 
@@ -53,8 +54,13 @@ class MailService
             if(empty($nameOfProductionEnv)){
                 $notSet[] = 'name-of-production-env';
             }
-            if(empty($approvedRecipients)){
-                $notSet[] = 'approved-recipients';
+            if((empty($approvedRecipients) && empty($approvedRecipientDomains))){
+                if(empty($approvedRecipients)){
+                    $notSet[] = 'approved-recipients';
+                }
+                if(empty($approvedRecipientDomains)){
+                    $notSet[] = 'approved-recipient-domains';
+                }
             }
             throw new Exception(
                 'Required Mailora config (mailora.defaults) values not set (' . implode(', ', $notSet) . ')'
