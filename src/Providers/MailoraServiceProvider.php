@@ -1,6 +1,6 @@
 <?php namespace Railroad\Mailora\Providers;
 
-use Illuminate\Foundation\Support\Providers\EventServiceProvider as ServiceProvider;
+use Illuminate\Support\ServiceProvider;
 
 class MailoraServiceProvider extends ServiceProvider
 {
@@ -11,8 +11,6 @@ class MailoraServiceProvider extends ServiceProvider
      */
     public function boot()
     {
-        parent::boot();
-
         $this->publishes(
             [
                 __DIR__ . '/../../config/mailora.php' => config_path('mailora.php')

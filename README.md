@@ -55,7 +55,7 @@ and then run `composer update railroad/mailora`.
 
 (I'm not sure what to do regarding specifying which version to use. Maybe just use "dev-master"?)
 
-Add `\Railroad\Mailora\Providers\MailoraServiceProvider::class,` to you application's *config/app.php*  to the `providers` array.\*
+Add `\Railroad\Mailora\Providers\MailoraServiceProvider::class,` to the `providers` array in your application's *config/app.php*.\*
 
 run `php artisan vendor:publish`, selecting this package from the resultant list of options.
 
