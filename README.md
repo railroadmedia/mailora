@@ -55,9 +55,13 @@ and then run `composer update railroad/mailora`.
 
 (I'm not sure what to do regarding specifying which version to use. Maybe just use "dev-master"?)
 
-run `php artisan vendor:publish`
+Add `\Railroad\Mailora\Providers\MailoraServiceProvider::class,` to you application's *config/app.php*  to the `providers` array.\*
 
-This will copy view files, the configuration file, and the routes file from the package into your application. Commit these additions.
+run `php artisan vendor:publish`, selecting this package from the resultant list of options.
+
+This will register views and routes, and will copy the configuration file into your application. Commit the config file to you application. Detailes on configuration are below.
+
+<span style="color:grey; font-size:0.7em; line-height:0.7em">\* (minor note RE future dev of this project) We shouldn't need to do this, but it seems feature of Laravel where the Service provider can just be registered in a package's own composer.json file... is  not working, and so therefore you must add this to the application.</span>
 
 
 ### 1.2 - Configuration
