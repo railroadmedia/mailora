@@ -18,9 +18,26 @@ class MailController
         $this->mailService = $mailService;
     }
 
-    public function send(Request $request){
+    public function sendPublic(Request $request){
         $input = $request->all();
-        $sent = $this->mailService->send($input);
+        try{
+            $sent = $this->mailService->sendPublic($input);
+        }catch(\Exception $exception){
+            error_log($exception->getMessage());
+            return JsonResponse::create(['error' => true]);
+        }
+
+        return JsonResponse::create(['sent' => $sent]);
+    }
+
+    public function sendSecure(Request $request){
+        $input = $request->all();
+        try{
+            $sent = $this->mailService->sendSecure($input);
+        }catch(\Exception $exception){
+            error_log($exception->getMessage());
+            return JsonResponse::create(['error' => true]);
+        }
 
         return JsonResponse::create(['sent' => $sent]);
     }
