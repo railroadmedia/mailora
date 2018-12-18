@@ -7,21 +7,17 @@ Route::group(
     ['prefix' => 'mailora'],
     function() {
 
-        Route::post(
-            '/send',
-            MailController::class . '@sendPublic'
-        )->name('mailora.send');
+        Route::group(
+            ['prefix' => 'public'],
+            function(){
+                Route::post('/send', MailController::class . '@sendPublic')->name('mailora.public.send');
+            }
+        );
 
         Route::group(
-            [
-                'prefix' => 'secure',
-                'middleware' => 'is-logged-in',
-            ],
+            ['prefix' => 'secure', 'middleware' => 'is-logged-in'],
             function(){
-                Route::post(
-                    '/send',
-                    MailController::class . '@sendSecure'
-                )->name('mailora.secure.send');
+                Route::post('/send', MailController::class . '@sendSecure')->name('mailora.secure.send');
             }
         );
     }
