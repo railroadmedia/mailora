@@ -5,14 +5,15 @@ return [
     'safety-recipient' => env('MAILORA_SAFETY_RECIPIENT', ''),
 
     // required to make "public" route work
-    'approved-recipients' => env( 'MAILORA_APPROVED_RECIPIENTS', []),
-    'approved-recipient-domains' => env('MAILORA_APPROVED_RECIPIENT_DOMAINS', []),
+    'approved-recipients' => '',
+    'approved-recipient-domains' => '',
 
     // required to make "authentication-protected" route work
     'auth_middleware' => [],
 
     // 1. Advanced, see documentation for details
-    'views-directory' => '/laravel/resources/views/emails',
+    'views-root-directory' => 'resources/views',
+    'views-email-directory' => 'emails',
     'mailables-namespace' => 'App\Mail\\',
     'name-of-production-env' => env( 'MAILORA_NAME_OF_PROD_ENV', 'production'),
     'public-free-for-all' => env('MAILORA_PUBLIC_FREE_FOR_ALL', false),
