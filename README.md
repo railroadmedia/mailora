@@ -200,7 +200,7 @@ users-email-set-reply-to,,,if authentication-protected route used and no reply-t
 
 #### 1.2.3 - authentication middleware
 
-Supply ~~an array of one or more values~~ **one value in a string** as "auth_middleware". Use the key from the "$routeMiddleware" property of your application's App\Http\Kernel class ([configured as per Laravel functionality](https://laravel.com/docs/5.6/middleware#registering-middleware)).
+Supply one value in a string as "auth_middleware". Use the key from the "$routeMiddleware" property of your application's App\Http\Kernel class ([configured as per Laravel functionality](https://laravel.com/docs/5.6/middleware#registering-middleware)).
 
 For example, if your app/Http/Kernel.php has:
 
@@ -217,22 +217,6 @@ For example, if your app/Http/Kernel.php has:
 ```
 
 ...then in config/mailora.php you can have something like this:
-
-<!-- -----------------------------------------------------------------
-NOPE!! OBSOLETE KEPT HERE IN CASE YOU—BRAVE READER—WANNA RE-INSTATE IT
-NOPE!! OBSOLETE KEPT HERE IN CASE YOU—BRAVE READER—WANNA RE-INSTATE IT
-
-```php
-return [
-    // ...
-    'auth_middleware' => ['auth', 'auth-special'],
-    // ...
-];
-```
-
-NOPE!! OBSOLETE KEPT HERE IN CASE YOU—BRAVE READER—WANNA RE-INSTATE IT
-NOPE!! OBSOLETE KEPT HERE IN CASE YOU—BRAVE READER—WANNA RE-INSTATE IT 
------------------------------------------------------------------- -->
 
 ```php
 return [
@@ -334,8 +318,8 @@ use that
 
 There are two endpoints:
 
-1. `POST /mail/` (Publicly accessible)
-1. `POST /members/mail/` (User must be authenticated to access this endpoint)
+1. `POST /mailora/public/send/` (Publicly accessible)
+1. `POST /mailora/public/send/` (User must be authenticated to access this endpoint)
 
 See details below.
 
@@ -348,7 +332,7 @@ Another example: `'foo' : 1` in the request will allow `{{ $input['foo'] ? 'true
 
 ### 3.1 - Send email from anywhere
 
-`POST /mail/`
+`POST /mailora/public/send/`
 
 Can be called from anywhere. Handy for sending emails from publicly-accessible support and sales pages.
 
@@ -375,7 +359,7 @@ let data = {
 };
 
 $.ajax({
-    url: 'https://www.foo.com/mailora/send' ,
+    url: 'https://www.foo.com/mailora/secure/send' ,
     type: 'get',
     dataType: 'json',
     data: data,
@@ -390,24 +374,28 @@ Provide all parameters in the request body.
 
 **Note that no fields are *required*!!**
 
+
 | key                      | required | default can be defined in `config('mailora.default')` | default hardcoded in package so needn't be provided by config | no default | description\|notes                                                                                                                   | 
 |--------------------------|----------|-------------------------------------------------------|---------------------------------------------------------------|------------|--------------------------------------------------------------------------------------------------------------------------------------| 
 | type                     | no       | yes                                                   | `'general'`                                                   |            |                                                                                                                                      | 
-| sender-address           | no       | yes                                                   |                                                               |            | If not provided from request or config email will not be sent.                                                                       | 
+| sender-address           | no       | yes                                                   |                                                               |            | Email will not be sent if this not provided from request or config.                                                                  | 
 | sender-name              | no       | yes                                                   |                                                               |            | See "Note 1" below                                                                                                                   | 
-| recipient-address        | no       | yes                                                   |                                                               |            | If not provided from request or config email will not be sent.                                                                       | 
+| recipient-address        | no       | yes                                                   |                                                               |            | Email will not be sent if this not provided from request or config.                                                                  | 
 | recipient-name           | no       | yes                                                   |                                                               |            | See "Note 1" below                                                                                                                   | 
 | subject                  | no       | yes                                                   | `'General Inquiry - Subject not specified'`                   |            |                                                                                                                                      | 
 | reply-to                 | no       |                                                       |                                                               | yes        |                                                                                                                                      | 
 | users-email-set-reply-to | no       | yes                                                   | `false`                                                       |            | If no reply-to param supplied in request but a logged in user is available the 'reply-to' will be set with that user's email address | 
 | message                  | no       | yes                                                   | `''` (empty string)                                           |            |                                                                                                                                      | 
 
+
+
+
 <!-- donatstudios.com/CsvToMarkdownTable
 key,required,default can be defined in `config('mailora.default')`,default hardcoded in package so needn't be provided by config,no default,description\|notes
 type,no,yes,`'general'`,,
-sender-address,no,yes,,,If not provided from request or config email will not be sent.
+sender-address,no,yes,,,Email will not be sent if this not provided from request or config.
 sender-name,no,yes,,,See "Note 1" below
-recipient-address,no,yes,,,If not provided from request or config email will not be sent.
+recipient-address,no,yes,,,Email will not be sent if this not provided from request or config.
 recipient-name,no,yes,,,See "Note 1" below
 subject,no,yes,`'General Inquiry - Subject not specified'`,,
 reply-to,no,,,yes,
@@ -416,7 +404,7 @@ message,no,yes,`''` (empty string),,
 -->
 
 
-Note 1: A provided name is not used unless address also provided from same source. For example: Say sender-address and sender-name are both set in the configuration file. If a request doesn't not specify request-address, then the addresss and name from the config will be used. However, if the request supplies an address bu no name, then that address (from the request) will be used, but not the name from config. The only time the name in the config is used, is when the address in the config is used. The only time a name is used when an address is provided in the request, is if a name is also provided in that request.
+Note 1: A provided name is not used unless address also provided from same source. For example: Say sender-address and sender-name are both set in the configuration file. If a request doesn't not specify request-address, then the addresss and name from the config will be used. However, if the request supplies an address but no name, then that address (from the request) will be used, but not the name from config. The only time the name in the config is used, is when the address in the config is used. When an address is provided in the request, only a name similarily provided in the request will be used. *A name provided from config will not be used if an email address is provided in a request.*
 
 
 #### 3.1.3 - Response Example
