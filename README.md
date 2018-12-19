@@ -412,17 +412,19 @@ Note 1: A provided name is not used unless address also provided from same sourc
 ##### 3.1.3.1 -  `{200 OK}`
 
 ```json
-
-{"sent":1}
-
+{"sent":true}
 ```
 
 ##### 3.1.3.2 - `{500 Internal Server Error}`
 
 ```json
+{"sent":false}
+```
 
-{"sent":0}
+or
 
+```json
+{"error":true}
 ```
 
 
