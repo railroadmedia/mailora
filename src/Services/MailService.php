@@ -215,7 +215,7 @@ class MailService
             // part 1 of 2 - first check for approved domains
             if(!empty($approvedRecipientDomains)){
                 foreach($approvedRecipientDomains as $approvedRecipientDomain){
-                    $regexPattern = '^[A-Za-z0-9._%+-]+@' . $approvedRecipientDomain . '$';
+                    $regexPattern = '^[A-Za-z0-9._%+-]+@' . $approvedRecipientDomain . '$^';
                     $match = preg_match($regexPattern, $recipientAddress);
                     if($match){
                         $approved = true;
