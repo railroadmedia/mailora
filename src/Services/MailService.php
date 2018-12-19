@@ -9,44 +9,37 @@ use Illuminate\Support\Facades\Mail;
 class MailService
 {
     /**
-     * MailService constructor.
+     * @param bool $public
      * @throws Exception
      */
-    public function __construct()
+    private function ensureConfigSet($public = false)
     {
-        $this->ensureConfigSet();
-    }
-
-    /**
-     * @throws Exception
-     */
-    private function ensureConfigSet(){
         $recipientSafety = config('mailora.safety-recipient');
         $senderAddress = config('mailora.defaults.sender-address');
-        $senderName = config('mailora.defaults.sender-name');
         $recipientAddress = config('mailora.defaults.recipient-address');
         $nameOfProductionEnv = config('mailora.name-of-production-env');
         $approvedRecipients = config('mailora.approved-recipients');
         $approvedRecipientDomains = config('mailora.approved-recipient-domains');
 
+        $failPublic = false;
+
+        if($public){
+            $failPublic = (empty($approvedRecipients) && empty($approvedRecipientDomains)); // only one of these required
+        }
+
         if(
             empty($recipientSafety) ||
             empty($senderAddress) ||
-            empty($senderName) ||
             empty($recipientAddress) ||
             empty($nameOfProductionEnv) ||
-            (empty($approvedRecipients) && empty($approvedRecipientDomains)) // only one of these required
+            $failPublic
         ){
             $notSet = [];
-
             if(empty($recipientSafety)){
                 $notSet[] = 'safety-recipient';
             }
             if(empty($senderAddress)){
                 $notSet[] = 'sender-address';
-            }
-            if(empty($senderName)){
-                $notSet[] = 'sender-name';
             }
             if(empty($recipientAddress)){
                 $notSet[] = 'recipient-address';
@@ -54,12 +47,14 @@ class MailService
             if(empty($nameOfProductionEnv)){
                 $notSet[] = 'name-of-production-env';
             }
-            if((empty($approvedRecipients) && empty($approvedRecipientDomains))){
-                if(empty($approvedRecipients)){
-                    $notSet[] = 'approved-recipients';
-                }
-                if(empty($approvedRecipientDomains)){
-                    $notSet[] = 'approved-recipient-domains';
+            if($failPublic){
+                if((empty($approvedRecipients) && empty($approvedRecipientDomains))){
+                    if(empty($approvedRecipients)){
+                        $notSet[] = 'approved-recipients';
+                    }
+                    if(empty($approvedRecipientDomains)){
+                        $notSet[] = 'approved-recipient-domains';
+                    }
                 }
             }
             throw new Exception(
@@ -71,10 +66,12 @@ class MailService
     /**
      * @param $input array
      * @param $returnExceptionObjectOnFailure null|bool
-     *
      * @return bool|Exception
+     * @throws Exception
      */
-    public function send($input, $returnExceptionObjectOnFailure = false, $returnMailableObject = false){
+    public function sendPublic($input, $returnExceptionObjectOnFailure = false)
+    {
+        $this->ensureConfigSet(true);
         $email = $this->getMailable($input);
 
         if($email === false){
@@ -92,12 +89,42 @@ class MailService
         // if no message defined, make sure email doesn't break
         $input['message'] = !empty($input['message']) ? $input['message'] : '';
 
-        // ↓↓↓ debugging aide only. DELETE ↓↓↓
-        // ↓↓↓ debugging aide only. DELETE ↓↓↓
-        // ↓↓↓ debugging aide only. DELETE ↓↓↓
-        if($returnMailableObject){
-            return $email;
+        try{
+            Mail::send($email);
+        }catch(Exception $exception){
+            $this->error(
+                'Email failed with message: "' . $exception->getMessage() . '". Email input ' .
+                '(passed through json_encode): "' . json_encode($input) . '"'
+            );
+            return $returnExceptionObjectOnFailure ? $exception : false;
         }
+        return true;
+    }
+
+    /**
+     * @param $input
+     * @param bool $returnExceptionObjectOnFailure
+     * @return bool|Exception
+     * @throws Exception
+     */
+    public function sendSecure($input, $returnExceptionObjectOnFailure = false){
+        $this->ensureConfigSet();
+        $email = $this->getMailable($input);
+
+        if($email === false){
+            return false;
+        }
+
+        $this->setSender($input, $email);
+        if(!$this->checkAndSetRecipient($input, $email, false)){
+            $this->error('Unauthorized recipient attempted. ($input: ' . json_encode($input) . ' )');
+            return false;
+        };
+        $this->setSubject($input, $email);
+        $this->setReplyTo($input, $email);
+
+        // if no message defined, make sure email doesn't break
+        $input['message'] = !empty($input['message']) ? $input['message'] : '';
 
         try{
             Mail::send($email);
@@ -149,16 +176,10 @@ class MailService
         $email->from($senderAddress, $senderName);
     }
 
-    private function checkAndSetRecipient($input, Mailable &$email)
+    private function checkAndSetRecipient($input, Mailable &$email, $public = true)
     {
         $approvedRecipients = config('mailora.approved-recipients');
-        if($approvedRecipients){
-            $approvedRecipients = explode(' ', $approvedRecipients);
-        }
         $approvedRecipientDomains = config('mailora.approved-recipient-domains');
-        if($approvedRecipientDomains){
-            $approvedRecipientDomains = explode(' ', $approvedRecipientDomains);
-        }
 
         // PART 1 - determine value to set as recipient
 
@@ -186,22 +207,28 @@ class MailService
 
         // 2.1 ensure allowed
 
-        $approved = false;
+        $approved = true;
 
-        if(!empty($approvedRecipientDomains)){
-            foreach($approvedRecipientDomains as $approvedRecipientDomain){
-                $regexPattern = '^[A-Za-z0-9._%+-]+@' . $approvedRecipientDomain . '$';
-                $match = preg_match($regexPattern, $recipientAddress);
-                if($match){
-                    $approved = true;
+        if($public){
+            $approved = false;
+
+            // part 1 of 2 - first check for approved domains
+            if(!empty($approvedRecipientDomains)){
+                foreach($approvedRecipientDomains as $approvedRecipientDomain){
+                    $regexPattern = '^[A-Za-z0-9._%+-]+@' . $approvedRecipientDomain . '$';
+                    $match = preg_match($regexPattern, $recipientAddress);
+                    if($match){
+                        $approved = true;
+                    }
                 }
             }
-        }
 
-        if(!$approved){
-            foreach($approvedRecipients as $approvedRecipient){
-                if($recipientAddress === $approvedRecipient){
-                    $approved = true;
+            // part 2 of 2 - if still no approval after trying the approved domains, then check for specific approved addresses
+            if(!$approved){
+                foreach($approvedRecipients as $approvedRecipient){
+                    if($recipientAddress === $approvedRecipient){
+                        $approved = true;
+                    }
                 }
             }
         }
