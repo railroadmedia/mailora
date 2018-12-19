@@ -5,12 +5,17 @@ Wrapper for Laravel's email functionality that adds HTTP API and front-end-dev-f
 
 Table of Contents:
 
+
 - [Mailora](#mailora)
   * [1 - Installation and Configuration](#1---installation-and-configuration)
     + [1.1 - Installation](#11---installation)
     + [1.2 - Configuration](#12---configuration)
-      - [1.2.1 Laravel-native 'config/mail.php'](#121-laravel-native--config-mailphp-)
-      - [1.2.2  Package provided 'config/mailora.php'](#122--package-provided--config-mailoraphp-)
+      - [1.2.1 - Laravel-native 'config/mail.php'](#121---laravel-native--config-mailphp-)
+      - [1.2.2 - Package provided 'config/mailora.php'](#122---package-provided--config-mailoraphp-)
+        * [1.2.2.1 - TL;DR](#1221---tl-dr)
+        * [1.2.2.2 - Details](#1222---details)
+          + [1.2.2.2.1 - Top-level values](#12221---top-level-values)
+          + [1.2.2.2.2 - values nested under "defaults"](#12222---values-nested-under--defaults-)
       - [1.2.3 - authentication middleware](#123---authentication-middleware)
     + [1.3 - Config for local-development](#13---config-for-local-development)
   * [2 - Features](#2---features)
@@ -18,7 +23,7 @@ Table of Contents:
     + [2.2 - configure default values for common operations](#22---configure-default-values-for-common-operations)
     + [2.3 - all-you-can-eat view variables](#23---all-you-can-eat-view-variables)
     + [2.2 - Easy Custom Views](#22---easy-custom-views)
-      - [2.2.1 Flowchart for class and view to use:](#221-flowchart-for-class-and-view-to-use-)
+      - [2.2.1 - Flowchart for class and view to use](#221---flowchart-for-class-and-view-to-use)
   * [3 - API Reference](#3---api-reference)
     + [3.1 - Send email from anywhere](#31---send-email-from-anywhere)
       - [3.1.1 - Request Example](#311---request-example)
@@ -26,6 +31,8 @@ Table of Contents:
       - [3.1.3 - Response Example](#313---response-example)
         * [3.1.3.1 -  `{200 OK}`](#3131------200-ok--)
         * [3.1.3.2 - `{500 Internal Server Error}`](#3132-----500-internal-server-error--)
+
+
 
 <!-- ecotrust-canada.github.io/markdown-toc -->
 
@@ -98,26 +105,46 @@ You can hard-code other non-sensitive values in the config file.
 
 #### 1.2.2 - Package provided 'config/mailora.php'
 
+##### 1.2.2.1 - TL;DR
+
+The bare minimum to provide to config/mailora.php is the following:
+
+* '*safety-recipient*'
+* '*defaults*'
+    * '*sender-address*'
+    * '*recipient-address*'
+* **one or both** of the following
+    * '*auth_middleware*'
+    * **one or both** of the following
+        * '*approved-recipients*'
+        * '*approved-recipient-domains*'
+
+
+##### 1.2.2.2 - Details
+
 This file is copied from this package to your application's "config" directory by running `artisan vendor:publish`.
 
-| key                               | requires app-specific config values | notes regarding requirement                                                       | description                                                                                                                                                                                                                       | 
-|-----------------------------------|-------------------------------------|-----------------------------------------------------------------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------| 
-| safety-recipient                  | yes                                 | nothing will work without this                                                    | email to send to when environment is not production                                                                                                                                                                               | 
-| approved-recipients               | yes\*                               | required for public-route functionality                                           | list (array) of email addresses that emails can be sent to when publicly-available route is used                                                                                                                                  | 
-| auth_middleware                   | yes\*                               | required for auth-protected-route functionality                                   | names of your applications authentication middleware behind which you wish to guard the totally open *not* publicly-accessible route. See next section for more detailed description                                              | 
-| views-directory                   | no\*                                | no change required unless view files created use non-standard path                |  path of directory with your applications custom email templates. From application root (as returned by Laravel's `base_path()` helper)                                                                                           | 
-| mailables-namespace               | no\*                                | no change required unless classes created use non-standard namespace              |  namespace of Mailable classes in your application.                                                                                                                                                                               | 
-| name-of-production-env            | no\*                                |  no change required unless your production environment is not called "production" | if application's "environment" is anything other than this value then emails will only be sent to the address provided by the "safety-recipient" config value                                                                     | 
-| public-free-for-all               |                                     |                                                                                   | `true` would allow public-route to have "send-to" address specified in request. Creates a publicly accessible free-email-sending service that's ripe for exploitation should anybody discover it. You probably shouldn't do this. | 
-| admin                             |                                     |                                                                                   | email address to send errors messages to                                                                                                                                                                                          | 
-| defaults.sender-address           | yes                                 | nothing will work without this                                                    | if no sender-address specified in request use this one                                                                                                                                                                            | 
-| defaults.sender-name              |                                     |                                                                                   | if no sender-name *and* no sender-address specified in request use this name. Will not apply to requests where sender-address supplied.                                                                                           | 
-| defaults.recipient-address        | yes                                 | nothing will work without this                                                    | if no recipient-address specified in request use this one                                                                                                                                                                         | 
-| defaults.subject                  |                                     |                                                                                   | if no subject specified in request use this one. If this not configured package hard-coded default used.                                                                                                                          | 
-| defaults.success-message          |                                     |                                                                                   | if no recipient-address specified in request use this one If this not configured package hard-coded default used.                                                                                                                 | 
-| defaults.error-message            |                                     |                                                                                   | if no error-message specified in request use this one If this not configured package hard-coded default used.                                                                                                                     | 
-| defaults.type                     |                                     |                                                                                   | if no type specified in request use this one If this not configured package hard-coded default used.                                                                                                                              | 
-| defaults.users-email-set-reply-to |                                     |                                                                                   | if authentication-protected route used and no reply-to address provided in request user's email address is set as reply-to                                                                                                        | 
+There are two basic functions. One is sending by calling an unprotected route. This is available to the whole world, and so will only send to email addresses (or domains) explicitly allowed by configuration. The other ("secure") is only accessible to authenicated users. For the former you must supply 'approved-recipients' or 'approved-recipient-domains' values and use the public route. For the latter you must supply a authentication middleware to use the "secure" route.
+
+###### 1.2.2.2.1 - Top-level values
+
+<!-- start of markdown table --------------------------------------------------------------------------------------- -->
+
+
+| key                    | requires app-specific config values | notes regarding requirement                                                       | description                                                                                                                                                                                                                       | 
+|------------------------|-------------------------------------|-----------------------------------------------------------------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------| 
+| safety-recipient       | yes                                 | nothing will work without this                                                    | email to send to when environment is not production                                                                                                                                                                               | 
+| approved-recipients    | yes\*                               | required for public-route functionality                                           | list (array) of email addresses that emails can be sent to when publicly-available route is used                                                                                                                                  | 
+| auth_middleware        | yes\*                               | required for auth-protected-route functionality                                   | names of your applications authentication middleware behind which you wish to guard the totally open *not* publicly-accessible route. See next section for more detailed description                                              | 
+| views-directory        | no\*                                | no change required unless view files created use non-standard path                |  path of directory with your applications custom email templates. From application root (as returned by Laravel's `base_path()` helper)                                                                                           | 
+| mailables-namespace    | no\*                                | no change required unless classes created use non-standard namespace              |  namespace of Mailable classes in your application.                                                                                                                                                                               | 
+| name-of-production-env | no\*                                |  no change required unless your production environment is not called "production" | if application's "environment" is anything other than this value then emails will only be sent to the address provided by the "safety-recipient" config value                                                                     | 
+| public-free-for-all    |                                     |                                                                                   | `true` would allow public-route to have "send-to" address specified in request. Creates a publicly accessible free-email-sending service that's ripe for exploitation should anybody discover it. You probably shouldn't do this. | 
+| admin                  |                                     |                                                                                   | email address to send errors messages to                                                                                                                                                                                          | 
+
+
+ 
+<!-- end of markdown table ----------------------------------------------------------------------------------------- -->
  
 <!-- donatstudios.com/CsvToMarkdownTable
 key,requires app-specific config values,notes regarding requirement,description
@@ -129,15 +156,40 @@ mailables-namespace,no\*,no change required unless classes created use non-stand
 name-of-production-env,no\*, no change required unless your production environment is not called "production",if application's "environment" is anything other than this value then emails will only be sent to the address provided by the "safety-recipient" config value
 public-free-for-all,,,`true` would allow public-route to have "send-to" address specified in request. Creates a publicly accessible free-email-sending service that's ripe for exploitation should anybody discover it. You probably shouldn't do this.
 admin,,,email address to send errors messages to
-defaults.sender-address,yes,nothing will work without this,if no sender-address specified in request use this one
-defaults.sender-name,,,if no sender-name *and* no sender-address specified in request use this name. Will not apply to requests where sender-address supplied.
-defaults.recipient-address,yes,nothing will work without this,if no recipient-address specified in request use this one
-defaults.subject,,,if no subject specified in request use this one. If this not configured package hard-coded default used.
-defaults.success-message,,,if no recipient-address specified in request use this one If this not configured package hard-coded default used.
-defaults.error-message,,,if no error-message specified in request use this one If this not configured package hard-coded default used.
-defaults.type,,,if no type specified in request use this one If this not configured package hard-coded default used.
-defaults.users-email-set-reply-to,,,if authentication-protected route used and no reply-to address provided in request user's email address is set as reply-to
 -->
+
+###### 1.2.2.2.2 - values nested under "defaults"
+
+<!-- start of markdown table --------------------------------------------------------------------------------------- -->
+
+
+| key                      | requires app-specific config values | notes regarding requirement    | description                                                                                                                             | 
+|--------------------------|-------------------------------------|--------------------------------|-----------------------------------------------------------------------------------------------------------------------------------------| 
+| sender-address           | yes                                 | nothing will work without this | if no sender-address specified in request use this one                                                                                  | 
+| sender-name              |                                     |                                | if no sender-name *and* no sender-address specified in request use this name. Will not apply to requests where sender-address supplied. | 
+| recipient-address        | yes                                 | nothing will work without this | if no recipient-address specified in request use this one                                                                               | 
+| subject                  |                                     |                                | if no subject specified in request use this one. If this not configured package hard-coded default used.                                | 
+| success-message          |                                     |                                | if no recipient-address specified in request use this one If this not configured package hard-coded default used.                       | 
+| error-message            |                                     |                                | if no error-message specified in request use this one If this not configured package hard-coded default used.                           | 
+| type                     |                                     |                                | if no type specified in request use this one If this not configured package hard-coded default used.                                    | 
+| users-email-set-reply-to |                                     |                                | if authentication-protected route used and no reply-to address provided in request user's email address is set as reply-to              | 
+
+
+ 
+<!-- end of markdown table ----------------------------------------------------------------------------------------- -->
+ 
+<!-- donatstudios.com/CsvToMarkdownTable
+key,requires app-specific config values,notes regarding requirement,description
+sender-address,yes,nothing will work without this,if no sender-address specified in request use this one
+sender-name,,,if no sender-name *and* no sender-address specified in request use this name. Will not apply to requests where sender-address supplied.
+recipient-address,yes,nothing will work without this,if no recipient-address specified in request use this one
+subject,,,if no subject specified in request use this one. If this not configured package hard-coded default used.
+success-message,,,if no recipient-address specified in request use this one If this not configured package hard-coded default used.
+error-message,,,if no error-message specified in request use this one If this not configured package hard-coded default used.
+type,,,if no type specified in request use this one If this not configured package hard-coded default used.
+users-email-set-reply-to,,,if authentication-protected route used and no reply-to address provided in request user's email address is set as reply-to
+-->
+
 
 \* with caveat—see note
 
@@ -146,7 +198,7 @@ defaults.users-email-set-reply-to,,,if authentication-protected route used and n
 
 #### 1.2.3 - authentication middleware
 
-Supply an array of one or more values as "auth_middleware". Use the key from the "$routeMiddleware" property of your application's App\Http\Kernel class ([configured as per Laravel functionality](https://laravel.com/docs/5.6/middleware#registering-middleware)).
+Supply ~~an array of one or more values~~ **one value in a string** as "auth_middleware". Use the key from the "$routeMiddleware" property of your application's App\Http\Kernel class ([configured as per Laravel functionality](https://laravel.com/docs/5.6/middleware#registering-middleware)).
 
 For example, if your app/Http/Kernel.php has:
 
@@ -164,6 +216,10 @@ For example, if your app/Http/Kernel.php has:
 
 ...then in config/mailora.php you can have something like this:
 
+<!-- -----------------------------------------------------------------
+NOPE!! OBSOLETE KEPT HERE IN CASE YOU—BRAVE READER—WANNA RE-INSTATE IT
+NOPE!! OBSOLETE KEPT HERE IN CASE YOU—BRAVE READER—WANNA RE-INSTATE IT
+
 ```php
 return [
     // ...
@@ -171,6 +227,19 @@ return [
     // ...
 ];
 ```
+
+NOPE!! OBSOLETE KEPT HERE IN CASE YOU—BRAVE READER—WANNA RE-INSTATE IT
+NOPE!! OBSOLETE KEPT HERE IN CASE YOU—BRAVE READER—WANNA RE-INSTATE IT 
+------------------------------------------------------------------ -->
+
+```php
+return [
+    // ...
+    'auth_middleware' => ['is-logged-in-or-something'],
+    // ...
+];
+```
+
 
 ### 1.3 - Config for local-development
 
