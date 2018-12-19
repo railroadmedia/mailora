@@ -340,7 +340,7 @@ class MailService
 
         $customViewsDirectory = config('mailora.views-directory') ?? '/resources/views/emails';
         $this->ensureSlashes($customViewsDirectory);
-        $customPotentialView = base_path() . $customViewsDirectory . '/' . $type . '.blade.php';
+        $customPotentialView = base_path() . $customViewsDirectory . $type . '.blade.php';
 
         if (file_exists($customPotentialView)) {
             $view = $customPotentialView;
