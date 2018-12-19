@@ -308,17 +308,21 @@ class MailService
         }
     }
 
-    private function ensureSlashes(&$string, $backslashes = false){
+    private function ensureSlashes(&$string, $backslashes = false, $omitFirstSlash = false, $omitLastSlash = false){
         $slash = $backslashes ? '\\' : '/';
 
         if($string){
-            $startsWithForwardSlash = substr($string, 0, 1) === $slash;
-            if(!$startsWithForwardSlash){
-                $string = $slash . $string;
+            if(!$omitFirstSlash){
+                $startsWithForwardSlash = substr($string, 0, 1) === $slash;
+                if(!$startsWithForwardSlash){
+                    $string = $slash . $string;
+                }
             }
-            $endsWithForwardSlash = substr($string, -1) === $slash;
-            if(!$endsWithForwardSlash){
-                $string = $string . $slash;
+            if(!$omitLastSlash){
+                $endsWithForwardSlash = substr($string, -1) === $slash;
+                if(!$endsWithForwardSlash){
+                    $string = $string . $slash;
+                }
             }
         }
     }
@@ -334,16 +338,18 @@ class MailService
     private function getView($type, $input)
     {
         $view = 'mailora::general';
-        if(!file_exists($view)){
-            $this->error('package general view file not found at ' . $view);
-        }
 
-        $customViewsDirectory = config('mailora.views-directory') ?? '/resources/views/emails';
-        $this->ensureSlashes($customViewsDirectory);
-        $customPotentialView = base_path() . $customViewsDirectory . $type . '.blade.php';
+        $viewsRootDir = config('mailora.views-root-directory') ?? '/resources/views/';
+        $viewsEmailDir = config('mailora.views-email-directory') ?? 'emails';
 
-        if (file_exists($customPotentialView)) {
-            $view = $customPotentialView;
+        $this->ensureSlashes($viewsRootDir);
+        $this->ensureSlashes($viewsEmailDir, false, true);
+
+        $customPotentialViewPathTruncated = $viewsEmailDir . $type;
+        $customPotentialViewPathFull = base_path() . $viewsRootDir . $customPotentialViewPathTruncated . '.blade.php';
+
+        if (file_exists($customPotentialViewPathFull)) {
+            $view = $customPotentialViewPathTruncated;
         }else{
             if($type !== 'general'){
                 $message = 'Custom type specified does have corresponding custom view. Email not sent. ';
