@@ -319,7 +319,7 @@ use that
 There are two endpoints:
 
 1. `POST /mailora/public/send/` (Publicly accessible)
-1. `POST /mailora/public/send/` (User must be authenticated to access this endpoint)
+1. `POST /mailora/secure/send/` (User must be authenticated to access this endpoint)
 
 See details below.
 
