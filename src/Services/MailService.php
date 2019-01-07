@@ -23,36 +23,36 @@ class MailService
 
         $failPublic = false;
 
-        if($public){
+        if ($public) {
             $failPublic = (empty($approvedRecipients) && empty($approvedRecipientDomains)); // only one of these required
         }
 
-        if(
+        if (
             empty($recipientSafety) ||
             empty($senderAddress) ||
             empty($recipientAddress) ||
             empty($nameOfProductionEnv) ||
             $failPublic
-        ){
+        ) {
             $notSet = [];
-            if(empty($recipientSafety)){
+            if (empty($recipientSafety)) {
                 $notSet[] = 'safety-recipient';
             }
-            if(empty($senderAddress)){
+            if (empty($senderAddress)) {
                 $notSet[] = 'sender-address';
             }
-            if(empty($recipientAddress)){
+            if (empty($recipientAddress)) {
                 $notSet[] = 'recipient-address';
             }
-            if(empty($nameOfProductionEnv)){
+            if (empty($nameOfProductionEnv)) {
                 $notSet[] = 'name-of-production-env';
             }
-            if($failPublic){
-                if((empty($approvedRecipients) && empty($approvedRecipientDomains))){
-                    if(empty($approvedRecipients)){
+            if ($failPublic) {
+                if ((empty($approvedRecipients) && empty($approvedRecipientDomains))) {
+                    if (empty($approvedRecipients)) {
                         $notSet[] = 'approved-recipients';
                     }
-                    if(empty($approvedRecipientDomains)){
+                    if (empty($approvedRecipientDomains)) {
                         $notSet[] = 'approved-recipient-domains';
                     }
                 }
@@ -74,12 +74,12 @@ class MailService
         $this->ensureConfigSet(true);
         $email = $this->getMailable($input);
 
-        if($email === false){
+        if ($email === false) {
             return false;
         }
 
         $this->setSender($input, $email);
-        if(!$this->checkAndSetRecipient($input, $email)){
+        if (!$this->checkAndSetRecipient($input, $email)) {
             $this->error('Unauthorized recipient attempted. ($input: ' . json_encode($input) . ' )');
             return false;
         };
@@ -89,9 +89,9 @@ class MailService
         // if no message defined, make sure email doesn't break
         $input['message'] = !empty($input['message']) ? $input['message'] : '';
 
-        try{
+        try {
             Mail::send($email);
-        }catch(Exception $exception){
+        } catch (Exception $exception) {
             $this->error(
                 'Email failed with message: "' . $exception->getMessage() . '". Email input ' .
                 '(passed through json_encode): "' . json_encode($input) . '"'
@@ -107,16 +107,17 @@ class MailService
      * @return bool|Exception
      * @throws Exception
      */
-    public function sendSecure($input, $returnExceptionObjectOnFailure = false){
+    public function sendSecure($input, $returnExceptionObjectOnFailure = false)
+    {
         $this->ensureConfigSet();
         $email = $this->getMailable($input);
 
-        if($email === false){
+        if ($email === false) {
             return false;
         }
 
         $this->setSender($input, $email);
-        if(!$this->checkAndSetRecipient($input, $email, false)){
+        if (!$this->checkAndSetRecipient($input, $email, false)) {
             $this->error('Unauthorized recipient attempted. ($input: ' . json_encode($input) . ' )');
             return false;
         };
@@ -126,9 +127,9 @@ class MailService
         // if no message defined, make sure email doesn't break
         $input['message'] = !empty($input['message']) ? $input['message'] : '';
 
-        try{
+        try {
             Mail::send($email);
-        }catch(Exception $exception){
+        } catch (Exception $exception) {
             $this->error(
                 'Email failed with message: "' . $exception->getMessage() . '". Email input ' .
                 '(passed through json_encode): "' . json_encode($input) . '"'
@@ -152,7 +153,7 @@ class MailService
         $view = $this->getView($type, $input);
         $emailClass = $this->getEmailClass($type);
 
-        if(!$emailClass || !$view){
+        if (!$emailClass || !$view) {
             return false;
         }
 
@@ -168,7 +169,7 @@ class MailService
             $senderAddress = $input['sender-address'];
             $senderName = null;
 
-            if(!empty($input['sender-name'])){
+            if (!empty($input['sender-name'])) {
                 $senderName = $input['sender-name'];
             }
         }
@@ -188,17 +189,17 @@ class MailService
         $recipientName = config('mailora.defaults.recipient-name');
 
         // 1.2 if input provided, use that
-        if(!empty($input['recipient-address'])){
+        if (!empty($input['recipient-address'])) {
             $recipientAddress = $input['recipient-address'];
             $recipientName = null; // unset because do not want to use default name with request-provided address
-            if(!empty($input['recipient-name'])){
+            if (!empty($input['recipient-name'])) {
                 $recipientName = $input['recipient-name'];
             }
         }
 
         // 1.3 if not prod, discard previous and use safety
         $production = app()->environment() === config('mailora.name-of-production-env');
-        if(!$production) {
+        if (!$production) {
             $recipientAddress = config('mailora.safety-recipient');
             $recipientName = null; // unset because do not want to incorrectly add name to email
         }
@@ -209,31 +210,31 @@ class MailService
 
         $approved = true;
 
-        if($public){
+        if ($public) {
             $approved = false;
 
             // part 1 of 2 - first check for approved domains
-            if(!empty($approvedRecipientDomains)){
-                foreach($approvedRecipientDomains as $approvedRecipientDomain){
+            if (!empty($approvedRecipientDomains)) {
+                foreach ($approvedRecipientDomains as $approvedRecipientDomain) {
                     $regexPattern = '^[A-Za-z0-9._%+-]+@' . $approvedRecipientDomain . '$^';
                     $match = preg_match($regexPattern, $recipientAddress);
-                    if($match){
+                    if ($match) {
                         $approved = true;
                     }
                 }
             }
 
             // part 2 of 2 - if still no approval after trying the approved domains, then check for specific approved addresses
-            if(!$approved){
-                foreach($approvedRecipients as $approvedRecipient){
-                    if($recipientAddress === $approvedRecipient){
+            if (!$approved) {
+                foreach ($approvedRecipients as $approvedRecipient) {
+                    if ($recipientAddress === $approvedRecipient) {
                         $approved = true;
                     }
                 }
             }
         }
 
-        if(!$approved){
+        if (!$approved) {
             return false;
         }
 
@@ -241,48 +242,50 @@ class MailService
 
         if ($recipientName) {
             $email->to([$recipientAddress, $recipientName]);
-        }else{ // must use *else*, or else will set *two* recipients, one with name, one without.
+        } else { // must use *else*, or else will set *two* recipients, one with name, one without.
             $email->to([$recipientAddress]);
         }
 
         return true;
     }
 
-    private function setSubject($input, Mailable &$email){
+    private function setSubject($input, Mailable &$email)
+    {
         $subject = 'General Inquiry - Subject not specified';
 
-        if(config('mailora.defaults.subject')){
+        if (config('mailora.defaults.subject')) {
             $subject = config('mailora.defaults.subject');
         }
 
-        if(!empty($input['subject'])){
+        if (!empty($input['subject'])) {
             $subject = $input['subject'];
         }
 
         $email->subject($subject);
     }
 
-    private function setReplyTo($input, Mailable &$email){
-        if(!empty($input['reply-to'])){
+    private function setReplyTo($input, Mailable &$email)
+    {
+        if (!empty($input['reply-to'])) {
             $email->replyTo($input['reply-to']);
-        }else{
+        } else {
             $user = auth()->user();
 
             $requestDoesNotSpecify = true;
             $requestSaysToAllow = null;
 
-            if(!empty($input['users-email-set-reply-to'])){
+            if (!empty($input['users-email-set-reply-to'])) {
                 $requestSaysToAllow = $input['users-email-set-reply-to'] === 1;
                 $requestDoesNotSpecify = false;
             }
 
-            if($requestDoesNotSpecify === true){
+            if ($requestDoesNotSpecify === true) {
                 $setUserAsReplyTo = config('mailora.defaults.users-email-set-reply-to');
-            }else{
+            } else {
                 $setUserAsReplyTo = $requestSaysToAllow;
             }
 
-            if($user && $setUserAsReplyTo){
+            if ($user && $setUserAsReplyTo) {
                 $email->replyTo($user->email);
             }
         }
@@ -299,37 +302,40 @@ class MailService
         return $str;
     }
 
-    private function error($message){
+    private function error($message)
+    {
         error_log($message);
 
-        if(config('mailora.admin')){
+        if (config('mailora.admin')) {
             $adminEmailAddressToSendMessageTo = config('mailora.admin');
             // todo: send email with $message
         }
     }
 
-    private function ensureSlashes(&$string, $backslashes = false, $omitFirstSlash = false, $omitLastSlash = false){
+    private function ensureSlashes(&$string, $backslashes = false, $omitFirstSlash = false, $omitLastSlash = false)
+    {
         $slash = $backslashes ? '\\' : '/';
 
-        if($string){
-            if(!$omitFirstSlash){
+        if ($string) {
+            if (!$omitFirstSlash) {
                 $startsWithForwardSlash = substr($string, 0, 1) === $slash;
-                if(!$startsWithForwardSlash){
+                if (!$startsWithForwardSlash) {
                     $string = $slash . $string;
                 }
             }
-            if(!$omitLastSlash){
+            if (!$omitLastSlash) {
                 $endsWithForwardSlash = substr($string, -1) === $slash;
-                if(!$endsWithForwardSlash){
+                if (!$endsWithForwardSlash) {
                     $string = $string . $slash;
                 }
             }
         }
     }
 
-    private function getEmailType($input){
+    private function getEmailType($input)
+    {
         $type = config('mailora.defaults.type') ?? 'general';
-        if(!empty($input['type'])){
+        if (!empty($input['type'])) {
             $type = $input['type'];
         }
         return $type;
@@ -350,8 +356,8 @@ class MailService
 
         if (file_exists($customPotentialViewPathFull)) {
             $view = $customPotentialViewPathTruncated;
-        }else{
-            if($type !== 'general'){
+        } else {
+            if ($type !== 'general') {
                 $message = 'Custom type specified does have corresponding custom view. Email not sent. ';
                 $message .= json_encode($input);
                 $this->error($message);
@@ -369,7 +375,7 @@ class MailService
         // default to native version of Mailable class
         $emailClass = '\Railroad\Mailora\Mail\General';
 
-        if(!class_exists($emailClass)){
+        if (!class_exists($emailClass)) {
             $this->error('package general Mailable class ( ' . $emailClass . ') not found');
         }
 
@@ -379,13 +385,15 @@ class MailService
         $potentialClass = $potentialNamespace . $this->dashesToCamelCase($type, true);
 
         // override default with custom if it exists
-        if(class_exists($potentialClass)){
+        if (class_exists($potentialClass)) {
             $emailClass = $potentialClass;
         }
 
-        if(!$emailClass){
-            $this->error('$emailClass ( ' . var_export($emailClass, true) .
-                ') was not defined in \Railroad\Mailora\Services\MailService::getMailable');
+        if (!$emailClass) {
+            $this->error(
+                '$emailClass ( ' . var_export($emailClass, true) .
+                ') was not defined in \Railroad\Mailora\Services\MailService::getMailable'
+            );
             return false;
         }
 

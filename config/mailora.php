@@ -15,7 +15,7 @@ return [
     'views-root-directory' => 'resources/views',
     'views-email-directory' => 'emails',
     'mailables-namespace' => 'App\Mail\\',
-    'name-of-production-env' => env( 'MAILORA_NAME_OF_PROD_ENV', 'production'),
+    'name-of-production-env' => env('MAILORA_NAME_OF_PROD_ENV', 'production'),
     'public-free-for-all' => env('MAILORA_PUBLIC_FREE_FOR_ALL', false),
     'admin' => env('MAILORA_DEFAULT_ADMIN', null),
 

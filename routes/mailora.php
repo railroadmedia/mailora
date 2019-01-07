@@ -5,18 +5,18 @@ use Illuminate\Support\Facades\Route;
 
 Route::group(
     ['prefix' => 'mailora'],
-    function() {
+    function () {
 
         Route::group(
             ['prefix' => 'public'],
-            function(){
+            function () {
                 Route::post('/send', MailController::class . '@sendPublic')->name('mailora.public.send');
             }
         );
 
         Route::group(
             ['prefix' => 'secure', 'middleware' => 'is-logged-in'],
-            function(){
+            function () {
                 Route::post('/send', MailController::class . '@sendSecure')->name('mailora.secure.send');
             }
         );

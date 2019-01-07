@@ -18,11 +18,12 @@ class MailController
         $this->mailService = $mailService;
     }
 
-    public function sendPublic(Request $request){
+    public function sendPublic(Request $request)
+    {
         $input = $request->all();
-        try{
+        try {
             $sent = $this->mailService->sendPublic($input);
-        }catch(\Exception $exception){
+        } catch (\Exception $exception) {
             error_log($exception->getMessage());
             return JsonResponse::create(['error' => true], 500);
         }
@@ -30,11 +31,12 @@ class MailController
         return JsonResponse::create(['sent' => $sent], $sent ? 200 : 500);
     }
 
-    public function sendSecure(Request $request){
+    public function sendSecure(Request $request)
+    {
         $input = $request->all();
-        try{
+        try {
             $sent = $this->mailService->sendSecure($input);
-        }catch(\Exception $exception){
+        } catch (\Exception $exception) {
             error_log($exception->getMessage());
             return JsonResponse::create(['error' => true], 500);
         }
