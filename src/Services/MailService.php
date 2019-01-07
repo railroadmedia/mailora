@@ -226,8 +226,13 @@ class MailService
         // 1.3 if not prod, discard previous and use safety
         $production = app()->environment() === config('mailora.name-of-production-env');
         if (!$production) {
-            $recipientAddress = config('mailora.safety-recipient');
-            $recipientName = null; // unset because do not want to incorrectly add name to email
+
+            $safetyEnabled = !env('DISABLE_MAILORA_LOCAL_MAIL_RECIPIENT_SAFETY_FEATURE');
+
+            if($safetyEnabled){
+                $recipientAddress = config('mailora.safety-recipient');
+                $recipientName = null; // unset because do not want to incorrectly add name to email
+            }
         }
 
         // PART 2 - set it
@@ -265,7 +270,6 @@ class MailService
         }
 
         // 2.2 set it if allowed
-
         if ($recipientName) {
             $email->to([$recipientAddress, $recipientName]);
         } else { // must use *else*, or else will set *two* recipients, one with name, one without.
