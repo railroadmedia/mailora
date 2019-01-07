@@ -231,12 +231,12 @@ return [
 
 Rather than mess around with changes to the config file, because Laravel's `env()` function is used, you can just provide environment variable to override anything hard-coded in the config files. Define values in a ".env" file in your application root. 
 
-At a bare minimum, you provide "MAIL_SAFETY_RECIPIENT" so that you're sure of where emails are being sent. Emails will only be sent to that address when the enviroment is is anything other than "production" (or the value returned by config('mailora.name-of-production-env') if it's different than "production");
+At a bare minimum, you provide "MAILORA_SAFETY_RECIPIENT" so that you're sure of where emails are being sent. Emails will only be sent to that address when the enviroment is is anything other than "production" (or the value returned by config('mailora.name-of-production-env') if it's different than "production");
 
 example:
 
 ```
-MAIL_SAFETY_RECIPIENT=jonathan+mailora_dev_SAFETY_RECIPIENT@drumeo.com
+MAILORA_SAFETY_RECIPIENT=jonathan+mailora_dev_SAFETY_RECIPIENT@drumeo.com
 ```
 
 Or supply many values:
@@ -318,8 +318,8 @@ use that
 
 There are two endpoints:
 
-1. `POST /mailora/public/send/` (Publicly accessible)
-1. `POST /mailora/secure/send/` (User must be authenticated to access this endpoint)
+1. `POST /mailora/public/send` (Publicly accessible)
+1. `POST /mailora/secure/send` (User must be authenticated to access this endpoint)
 
 See details below.
 
