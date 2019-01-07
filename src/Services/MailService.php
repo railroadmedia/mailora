@@ -153,7 +153,7 @@ class MailService
         $view = $this->getView($type, $input);
         $emailClass = $this->getEmailClass($type);
 
-        if (!$emailClass || !$view) {
+        if (!$emailClass && !$view) {
             return false;
         }
 
