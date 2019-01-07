@@ -195,6 +195,32 @@ class MailService
             if (!empty($input['recipient-name'])) {
                 $recipientName = $input['recipient-name'];
             }
+        } else { // if no request-supplied recipient address check for Mailable-supplied value
+
+            /*
+             * If the recipient ('to') is already set on the Mailable object—because it's a custom class with a
+             * hardcoded recipient address, for example
+             */
+            if ($email->to) {
+                /*
+                 * Get the value, and store it in case we don't actually want to sent to it (in case we're not on
+                 * production or something, and then it'll just be added if it's what we do want now that
+                 * "$recipientAddress" and "$recipientName" are set accordingly.
+                 */
+                $recipientFromMailable = reset($email->to);
+
+                /*
+                 * Unset "$recipientName" unset because if not specified by Mailable, we don't want to then use the
+                 * above-defined config-supplied default name with a mailable-provided address.
+                 */
+                $recipientName = null;
+
+                $recipientAddress = $recipientFromMailable['address'];
+                $recipientName = $recipientFromMailable['name'];
+
+                unset($email->to);
+                $email->to = [];
+            }
         }
 
         // 1.3 if not prod, discard previous and use safety
