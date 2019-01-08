@@ -305,7 +305,7 @@ class MailService
             $requestSaysToAllow = null;
 
             if (!empty($input['users-email-set-reply-to'])) {
-                $requestSaysToAllow = $input['users-email-set-reply-to'] === 1;
+                $requestSaysToAllow = $input['users-email-set-reply-to'] === true;
                 $requestDoesNotSpecify = false;
             }
 
