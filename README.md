@@ -269,7 +269,7 @@ In fact, **the endpoint has no required parameters**—you can place all require
 
 ### 2.3 - all-you-can-eat view variables
 
-Any parameter you include in a request is available for use in views. Pass `'foo' : 'bar'`? In the view, `{{ $input['foo'] }}` will print `bar`. It's just *that* easy! 
+***WIP*** (Jan 2019) ~~Any parameter you include in a request is available for use in views. Pass `'foo' : 'bar'`? In the view, `{{ $input['foo'] }}` will print `bar`. It's just *that* easy!~~ 
 
 
 ### 2.2 - Easy Custom Views
