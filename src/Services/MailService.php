@@ -195,6 +195,12 @@ class MailService
             if (!empty($input['recipient-name'])) {
                 $recipientName = $input['recipient-name'];
             }
+
+            if($email->to){
+                // if recipient provided but mailable has a recipient hardcoded, then discard the Mailable's hardcoded one.
+                unset($email->to);
+                $email->to = [];
+            }
         } else { // if no request-supplied recipient address check for Mailable-supplied value
 
             /*
