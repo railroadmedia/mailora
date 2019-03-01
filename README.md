@@ -21,9 +21,11 @@ Table of Contents:
   * [2 - Features](#2---features)
     + [2.1 - send email with POST requests to endpoint](#21---send-email-with-post-requests-to-endpoint)
     + [2.2 - configure default values for common operations](#22---configure-default-values-for-common-operations)
-    + [2.3 - all-you-can-eat view variables](#23---all-you-can-eat-view-variables)
+    + [2.3 - "all-you-can-eat view variables"](#23----all-you-can-eat-view-variables-)
+      - [2.3.1 - Accessing Values Passed to View](#231---accessing-values-passed-to-view)
     + [2.2 - Easy Custom Views](#22---easy-custom-views)
       - [2.2.1 - Flowchart for class and view to use](#221---flowchart-for-class-and-view-to-use)
+      - [2.2.2 - View files nested in email-directory sub-directories](#222---view-files-nested-in-email-directory-sub-directories)
   * [3 - API Reference](#3---api-reference)
     + [3.1 - Send email from anywhere](#31---send-email-from-anywhere)
       - [3.1.1 - Request Example](#311---request-example)
@@ -31,8 +33,6 @@ Table of Contents:
       - [3.1.3 - Response Example](#313---response-example)
         * [3.1.3.1 -  `{200 OK}`](#3131------200-ok--)
         * [3.1.3.2 - `{500 Internal Server Error}`](#3132-----500-internal-server-error--)
-
-
 
 <!-- ecotrust-canada.github.io/markdown-toc -->
 
@@ -267,9 +267,60 @@ Always send to the same email address. Set that as the default in the configurat
 
 In fact, **the endpoint has no required parameters**—you can place all required information in the configuration and only provide unique info when required.
 
-### 2.3 - all-you-can-eat view variables
+### 2.3 - "all-you-can-eat view variables"
 
-***WIP*** (Jan 2019) ~~Any parameter you include in a request is available for use in views. Pass `'foo' : 'bar'`? In the view, `{{ $input['foo'] }}` will print `bar`. It's just *that* easy!~~ 
+You can easily pass values you need and have them available in your custom view. No PHP needed.
+
+#### 2.3.1 - Accessing Values Passed to View
+
+Values passed to view in request are nested in `$input` variable.
+
+Thus, if you pass: 
+
+```javascript
+$.ajax({
+    url: 'https://www.foo.com/mailora/secure/send' ,
+    type: 'get',
+    dataType: 'json',
+    data: {
+    'type': 'layouts/action',
+    'lines': [
+        'foo_lines_bar_line_1',
+        'foo_lines_bar_line_2',
+        'foo_lines_bar_line_3',
+        'foo_lines_bar_line_4',
+        'foo_lines_bar_line_5',
+        'foo_lines_bar_line_6'
+    ],
+    'callToAction': {
+        'url': 'foo_callToAction_bar',
+        'text': 'foo_callToAction_bar',
+    },
+    'logo': 'foo_logo_bar',
+    'brand': 'foo_brand_bar',
+    'subject': 'important action!!'
+    },
+    success: function(response) { /* handle error */ },
+    error: function(response) { /* handle error */ }
+});
+```
+
+You can access the custom values you're passing via the `$input` variable in the view. For example:
+
+```html
+<table>
+    @foreach($input['lines'] as $line)
+        <tr><td>{{ $line }}</td></tr>
+    @endforeach
+    @if(!empty($input['callToAction']))
+        <tr><td><a href="{{ $input['callToAction']['url'] }}">{{ $input['callToAction']['text'] }}</a></td></tr>
+    @endif
+    <tr><td>— The {{ $input['brand'] ?? 'Musora' }} Team</td></tr>
+</table>
+```
+
+Note the `$line` variable. This is defined in the foreach-loop, and thus is *not* `$input[`line`]`.
+
 
 
 ### 2.2 - Easy Custom Views
@@ -281,6 +332,8 @@ This enables the following.
 Regardless of what class is used—that is to say even if no `Mailable` class was found matching the ConvertedCapitalizedCamelCase 'type' value passed, Mailora will then look for a view file matching that type value. It looks for files in the directory described by the string returned by `config('mailora.views-directory')`\*\*. If one if found, that is used. If not, mailora's general.php is used\*\*\*.
 
 **The upshot of all this is that new email-templates can be created with no back-end modifications required. *Simply create a view file, and supply and retrieve values from the `$input` parameter.***
+
+**TL;DR** Regarding the value '*type*' specified in request data. It will resolve to class if possible. Else, the default `General` PHP `Mailable` class will be used, and '*type*' will resolve to a view, if possible. Else, the default 'general.blade.php' will be used.
 
 \* the value `foo-bar-baz` would use the class `FooBarBaz` and the view file "foo-bar-baz.blade.php".
 
@@ -311,6 +364,14 @@ yes
 ↓
 use that
 ```
+
+#### 2.2.2 - View files nested in email-directory sub-directories
+
+To specify a view in a subdirectory (of your emails directory), simply type that relative path of the view file.
+
+For Example, let's say your views dir is: */appFoo/resources/views/emails*. You can use the view file */appFoo/resources/views/emails/fooView.blade.php* by specifying the "type" value for your email request as "fooView". But what if you have a view file in the *emails/barDir* directory? Say maybe something like */appFoo/resources/views/emails/barDir/quxView.blade*? Well, you would just specify the type as *barDir/quxView*.
+
+This is all of course assuming you don't need any getting or special transformations possible with a custom laravel `Mailable` PHP class and are okay with the default Mailora `General` PHP class being used.
 
 
 3 - API Reference

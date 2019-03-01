@@ -65,11 +65,10 @@ class MailService
 
     /**
      * @param $input array
-     * @param $returnExceptionObjectOnFailure null|bool
      * @return bool|Exception
      * @throws Exception
      */
-    public function sendPublic($input, $returnExceptionObjectOnFailure = false)
+    public function sendPublic($input)
     {
         $this->ensureConfigSet(true);
         $email = $this->getMailable($input);
@@ -89,25 +88,15 @@ class MailService
         // if no message defined, make sure email doesn't break
         $input['message'] = !empty($input['message']) ? $input['message'] : '';
 
-        try {
-            Mail::send($email);
-        } catch (Exception $exception) {
-            $this->error(
-                'Email failed with message: "' . $exception->getMessage() . '". Email input ' .
-                '(passed through json_encode): "' . json_encode($input) . '"'
-            );
-            return $returnExceptionObjectOnFailure ? $exception : false;
-        }
-        return true;
+        Mail::send($email);
     }
 
     /**
      * @param $input
-     * @param bool $returnExceptionObjectOnFailure
      * @return bool|Exception
      * @throws Exception
      */
-    public function sendSecure($input, $returnExceptionObjectOnFailure = false)
+    public function sendSecure($input)
     {
         $this->ensureConfigSet();
         $email = $this->getMailable($input);
@@ -127,16 +116,7 @@ class MailService
         // if no message defined, make sure email doesn't break
         $input['message'] = !empty($input['message']) ? $input['message'] : '';
 
-        try {
-            Mail::send($email);
-        } catch (Exception $exception) {
-            $this->error(
-                'Email failed with message: "' . $exception->getMessage() . '". Email input ' .
-                '(passed through json_encode): "' . json_encode($input) . '"'
-            );
-            return $returnExceptionObjectOnFailure ? $exception : false;
-        }
-        return true;
+        Mail::send($email);
     }
 
     // -----------------------------------------------------------
@@ -331,7 +311,7 @@ class MailService
             }
 
             if ($user && $setUserAsReplyTo) {
-                $email->replyTo($user->email);
+                $email->replyTo($userEmail);
             }
         }
     }

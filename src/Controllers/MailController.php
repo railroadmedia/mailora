@@ -12,20 +12,29 @@ class MailController
      * @var MailService
      */
     private $mailService;
+    private $returnErrorDetailsOnFailure;
 
     public function __construct(MailService $mailService)
     {
         $this->mailService = $mailService;
+
+        $this->returnErrorDetailsOnFailure = false;
+        $production = app()->environment() === config('mailora.name-of-production-env');
+        if (!$production) {
+            $this->returnErrorDetailsOnFailure = true;
+        }
     }
 
     public function sendPublic(Request $request)
     {
         $input = $request->all();
         try {
-            $sent = $this->mailService->sendPublic($input);
+            $this->mailService->sendPublic($input);
         } catch (\Exception $exception) {
             error_log($exception->getMessage());
-            return JsonResponse::create(['error' => true], 500);
+            if($this->returnErrorDetailsOnFailure){
+                return JsonResponse::create(['error' => 'see error_log for details'], 500);
+            }
         }
 
         return JsonResponse::create(['sent' => $sent], $sent ? 200 : 500);
@@ -35,12 +44,14 @@ class MailController
     {
         $input = $request->all();
         try {
-            $sent = $this->mailService->sendSecure($input);
+            $this->mailService->sendSecure($input);
         } catch (\Exception $exception) {
             error_log($exception->getMessage());
-            return JsonResponse::create(['error' => true], 500);
+            if($this->returnErrorDetailsOnFailure){
+                return JsonResponse::create(['error' => $exception->getMessage()], 500);
+            }
+            return JsonResponse::create(['error' => 'see error_log for details'], 500);
         }
-
-        return JsonResponse::create(['sent' => $sent], $sent ? 200 : 500);
+        return JsonResponse::create(['sent' => true], 200);
     }
 }
