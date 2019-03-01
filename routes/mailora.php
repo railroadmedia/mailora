@@ -15,7 +15,7 @@ Route::group(
         );
 
         Route::group(
-            ['prefix' => 'secure', 'middleware' => 'is-logged-in'],
+            ['prefix' => 'secure', 'middleware' => config('mailora.auth_middleware')],
             function () {
                 Route::post('/send', MailController::class . '@sendSecure')->name('mailora.secure.send');
             }
