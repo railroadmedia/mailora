@@ -321,6 +321,15 @@ class MailService
                 $setUserAsReplyTo = $requestSaysToAllow;
             }
 
+            try{
+                /** @var \Railroad\Usora\Entities\User $user */
+                $userEmail = $user->getEmail();
+            }
+            catch(Exception $e){
+                // in case mailora installed in application not using Usora
+                $userEmail = $user->email;
+            }
+
             if ($user && $setUserAsReplyTo) {
                 $email->replyTo($user->email);
             }
