@@ -257,7 +257,7 @@ class MailService
 
         // 2.2 set it if allowed
         if ($recipientName) {
-            $email->to([$recipientAddress, $recipientName]);
+            $email->to([$recipientAddress], $recipientName);
         } else { // must use *else*, or else will set *two* recipients, one with name, one without.
             $email->to([$recipientAddress]);
         }
