@@ -37,7 +37,7 @@ class MailController
             }
         }
 
-        return JsonResponse::create(['sent' => $sent], $sent ? 200 : 500);
+        return JsonResponse::create(['sent' => true], 200);
     }
 
     public function sendSecure(Request $request)
