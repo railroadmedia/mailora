@@ -169,8 +169,8 @@ class MailService
         $recipientName = config('mailora.defaults.recipient-name');
 
         // 1.2 if input provided, use that
-        if (!empty($input['recipient-address'])) {
-            $recipientAddress = $input['recipient-address'];
+        if (!empty($input['recipient-address']) || !empty($input['recipient'])) {
+            $recipientAddress = $input['recipient-address'] ?? $input['recipient'];
             $recipientName = null; // unset because do not want to use default name with request-provided address
             if (!empty($input['recipient-name'])) {
                 $recipientName = $input['recipient-name'];
