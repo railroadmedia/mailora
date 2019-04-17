@@ -408,15 +408,29 @@ User must be defined in config file "config/mailora.php". If user is not present
 
 ```javascript
 let data = {
-    'type' : 'foo',
-    'sender-address' : 'bar@some-domain.com',
-    'sender-name' : 'Baz Qux',
-    'recipient-address' : 'quux@other-domain.com',
-    'recipient-name' : 'Corge Uier',
-    'subject' : 'Grault garply waldo',
-    'reply-to' : 'bar@some-domain.com',
-    'users-email-set-reply-to' : '',
-    'message' : 'Fred plugh thud, mos henk. Def.',
+    "type": "foo",
+    "sender-address": "bar@some-domain.com",
+    "sender-name": "Baz Qux",
+    "recipient": [
+        "foo+test_0@bar.com",
+        "foo+test_1@bar.com",
+        {
+           "name":"foo_test_2",
+           "address":"foo+test_2@bar.com"
+        },
+        {
+           "name":"foo_test_3",
+           "address":"foo+test_3@bar.com"
+        },
+        {
+           "name":"foo_test_4",
+           "address":"foo+test_4@bar.com"
+        }
+     ],
+    "subject": "Grault garply waldo",
+    "reply-to": "bar@some-domain.com",
+    "users-email-set-reply-to": "",
+    "message": "Fred plugh thud, mos henk. Def."
 };
 
 $.ajax({
@@ -429,6 +443,23 @@ $.ajax({
 });
 ```
 
+Alternatively, set `"recipient-address"` (and optionally `"recipient-name"`) rather than `"recipient"` if you just have
+one to specify.
+
+```javascript
+let data = {
+    "type": "foo",
+    "sender-address": "bar@some-domain.com",
+    "sender-name": "Baz Qux",
+    "recipient-address": "foo+test_0@bar.com",
+    "subject": "Grault garply waldo",
+    "reply-to": "bar@some-domain.com",
+    "users-email-set-reply-to": "",
+    "message": "Fred plugh thud, mos henk. Def."
+};
+
+```
+
 #### 3.1.2 - Request Parameters
 
 Provide all parameters in the request body.
@@ -436,37 +467,66 @@ Provide all parameters in the request body.
 **Note that no fields are *required*!!**
 
 
-| key                      | required | default can be defined in `config('mailora.default')` | default hardcoded in package so needn't be provided by config | no default | description\|notes                                                                                                                   | 
-|--------------------------|----------|-------------------------------------------------------|---------------------------------------------------------------|------------|--------------------------------------------------------------------------------------------------------------------------------------| 
-| type                     | no       | yes                                                   | `'general'`                                                   |            |                                                                                                                                      | 
-| sender-address           | no       | yes                                                   |                                                               |            | Email will not be sent if this not provided from request or config.                                                                  | 
-| sender-name              | no       | yes                                                   |                                                               |            | See "Note 1" below                                                                                                                   | 
-| recipient-address        | no       | yes                                                   |                                                               |            | Email will not be sent if this not provided from request or config.                                                                  | 
-| recipient-name           | no       | yes                                                   |                                                               |            | See "Note 1" below                                                                                                                   | 
-| subject                  | no       | yes                                                   | `'General Inquiry - Subject not specified'`                   |            |                                                                                                                                      | 
-| reply-to                 | no       |                                                       |                                                               | yes        |                                                                                                                                      | 
-| users-email-set-reply-to | no       | yes                                                   | `false`                                                       |            | If no reply-to param supplied in request but a logged in user is available the 'reply-to' will be set with that user's email address | 
-| message                  | no       | yes                                                   | `''` (empty string)                                           |            |                                                                                                                                      | 
-
+| key                      | required | default can be defined in `config('mailora.default')` | default hardcoded in package so needn't be provided by config | description\|notes                                                                                                                   |  | 
+|--------------------------|----------|-------------------------------------------------------|---------------------------------------------------------------|--------------------------------------------------------------------------------------------------------------------------------------|--| 
+| type                     | no       | yes                                                   | `'general'`                                                   |                                                                                                                                      |  | 
+| sender-address           | no       | yes                                                   |                                                               | Email will not be sent if this not provided from request or config.                                                                  |  | 
+| sender-name              | no       | yes                                                   |                                                               | See "Note 1" below                                                                                                                   |  | 
+| recipient-address        | no       | yes                                                   |                                                               | Email will not be sent if this not provided from request or config.                                                                  |  | 
+| recipient-name           | no       | yes                                                   |                                                               | See "Note 1" below                                                                                                                   |  | 
+| recipient                | no       | no (not yet)                                          |                                                               | See "Note 2" below                                                                                                                   |  | 
+| subject                  | no       | yes                                                   | `'General Inquiry - Subject not specified'`                   |                                                                                                                                      |  | 
+| reply-to                 | no       |                                                       |                                                               |                                                                                                                                      |  | 
+| users-email-set-reply-to | no       | yes                                                   | `false`                                                       | If no reply-to param supplied in request but a logged in user is available the 'reply-to' will be set with that user's email address |  | 
+| message                  | no       | yes                                                   | `''` (empty string)                                           |                                                                                                                                      |  | 
 
 
 
 <!-- donatstudios.com/CsvToMarkdownTable
-key,required,default can be defined in `config('mailora.default')`,default hardcoded in package so needn't be provided by config,no default,description\|notes
-type,no,yes,`'general'`,,
-sender-address,no,yes,,,Email will not be sent if this not provided from request or config.
-sender-name,no,yes,,,See "Note 1" below
-recipient-address,no,yes,,,Email will not be sent if this not provided from request or config.
-recipient-name,no,yes,,,See "Note 1" below
+key,required,default can be defined in `config('mailora.default')`,default hardcoded in package so needn't be provided by config,description\|notes
+type,no,yes,`'general'`,
+sender-address,no,yes,,Email will not be sent if this not provided from request or config.
+sender-name,no,yes,,See "Note 1" below
+recipient-address,no,yes,,Email will not be sent if this not provided from request or config.
+recipient-name,no,yes,,See "Note 1" below
+recipient,no,no (not yet),,See "Note 2" below
 subject,no,yes,`'General Inquiry - Subject not specified'`,,
-reply-to,no,,,yes,
-users-email-set-reply-to,no,yes,`false`,,If no reply-to param supplied in request but a logged in user is available the 'reply-to' will be set with that user's email address
-message,no,yes,`''` (empty string),,
+reply-to,no,,,
+users-email-set-reply-to,no,yes,`false`,If no reply-to param supplied in request but a logged in user is available the 'reply-to' will be set with that user's email address
+message,no,yes,`''` (empty string),
 -->
 
 
 Note 1: A provided name is not used unless address also provided from same source. For example: Say sender-address and sender-name are both set in the configuration file. If a request doesn't not specify request-address, then the addresss and name from the config will be used. However, if the request supplies an address but no name, then that address (from the request) will be used, but not the name from config. The only time the name in the config is used, is when the address in the config is used. When an address is provided in the request, only a name similarily provided in the request will be used. *A name provided from config will not be used if an email address is provided in a request.*
 
+
+Note 2: Pass any number of recipients as items in array formatted as JSON-string. Each recipient is an item in the array. There are two options to specify each recipient in the array:
+
+1. as just a string of the address.
+2. as an object-literal with the `"address"` defined, and optionally the `"name"`
+
+Example:
+
+```json
+[
+   "foo+test_0@bar.com",
+   "foo+test_1@bar.com",
+   {
+      "name":"foo_test_2",
+      "address":"foo+test_2@bar.com"
+   },
+   {
+      "name":"foo_test_3",
+      "address":"foo+test_3@bar.com"
+   },
+   {
+      "name":"foo_test_4",
+      "address":"foo+test_4@bar.com"
+   }
+]
+```
+
+Also, this will be renamed to "`recipients`" one day.
 
 #### 3.1.3 - Response Example
 

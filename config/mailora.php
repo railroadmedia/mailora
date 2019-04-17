@@ -31,6 +31,7 @@ return [
         'recipient-name' => env('MAILORA_DEFAULT_RECIPIENT_NAME', null),
         'subject' => null,
         'message' => null,
+        // todo: ability to set multiple recipients.
 
         // 2.3 Advanced, see documentation for details
         'type' => env('MAILORA_DEFAULT_TYPE', null),

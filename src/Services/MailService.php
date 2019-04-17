@@ -157,109 +157,136 @@ class MailService
         $email->from($senderAddress, $senderName);
     }
 
+    /**
+     * @param $input
+     * @param Mailable $email
+     * @param bool $public
+     * @return bool
+     * @throws Exception
+     */
     private function checkAndSetRecipient($input, Mailable &$email, $public = true)
     {
+        // todo: change singular 'recipient' to plural 'recipients' everywhere in the package
+
         $approvedRecipients = config('mailora.approved-recipients');
         $approvedRecipientDomains = config('mailora.approved-recipient-domains');
 
-        // PART 1 - determine value to set as recipient
+        $recipients = [[
+            'address' => config('mailora.defaults.recipient-address'),
+            'name' => config('mailora.defaults.recipient-name')
+        ]];
 
-        // 1.1. default to default
-        $recipientAddress = config('mailora.defaults.recipient-address');
-        $recipientName = config('mailora.defaults.recipient-name');
+        // if recipients provided by request, use them
+        if ( !empty($input['recipient-address']) || !empty($input['recipient']) ) {
 
-        // 1.2 if input provided, use that
-        if (!empty($input['recipient-address']) || !empty($input['recipient'])) {
-            $recipientAddress = $input['recipient-address'] ?? $input['recipient'];
-            $recipientName = null; // unset because do not want to use default name with request-provided address
-            if (!empty($input['recipient-name'])) {
-                $recipientName = $input['recipient-name'];
+            $recipientDecoded = json_decode($input['recipient'], true);
+
+            if(is_array($recipientDecoded)){
+
+                $extractedRecipients = [];
+
+                foreach($recipientDecoded as $key => $value){
+                    if(is_array($value)){
+                        $aRecipient = [];
+                        foreach($value as $subKey => $subValue){
+                            if($subKey === 'name' || $subKey === 'address'){
+                                $aRecipient[$subKey] = $subValue;
+                            }
+                        }
+                        $extractedRecipients[] = $aRecipient;
+                    }
+                    if( is_string($value) ){
+                        if(count($recipientDecoded) >= 2){
+                            $extractedRecipients[] = $value;
+                        }else{
+                            $extractedRecipients = $recipientDecoded;
+                        }
+                    }
+                }
+
+                $recipients = $extractedRecipients;
+            }else{
+                $recipientAddress = $input['recipient-address'] ?? $input['recipient'];
+                $recipients = [$recipientAddress];
+                if (!empty($input['recipient-name'])) {
+                    $recipientName = $input['recipient-name'];
+                    $recipients = [ ['address' => $recipientAddress, 'name' => $recipientName] ];
+                }
             }
 
+            // if request supplies recipient AND mailable has a recipient hardcoded, discard latter to use former only
             if($email->to){
-                // if recipient provided but mailable has a recipient hardcoded, then discard the Mailable's hardcoded one.
                 unset($email->to);
                 $email->to = [];
             }
-        } else { // if no request-supplied recipient address check for Mailable-supplied value
 
+            if ($public) {
+                foreach ($recipients as $key => $recipient) {
+
+                    $addressApproved = false;
+                    if (gettype($recipient) === 'array') {
+                        $address = $recipient['address'];
+                    } else {
+                        $address = $recipient;
+                    }
+
+                    // validate address against whitelisted *domains*
+                    if (!empty($approvedRecipientDomains)) {
+                        foreach ($approvedRecipientDomains as $approvedRecipientDomain) {
+                            if (preg_match('^[A-Za-z0-9._%+-]+@' . $approvedRecipientDomain . '$^', $address)) {
+                                $addressApproved = true;
+                            }
+                        }
+                    }
+
+                    // if no whitelisted *domains* OR address was failed validation against domains...
+                    // ... try against whitelisted exact addresses
+                    if (empty($approvedRecipientDomains) || !$addressApproved) {
+                        foreach ($approvedRecipients as $approvedRecipient) {
+                            if ($address === $approvedRecipient) {
+                                $addressApproved = true;
+                            }
+                        }
+                    }
+
+                    if (!$addressApproved) {
+                        unset($recipients[$key]);
+                        error_log('Mailora public send request made with unauthorized recipient: "' . $address . '"');
+                    }
+                }
+            }
+        } else { // check for Mailable-supplied value
             /*
-             * If the recipient ('to') is already set on the Mailable object—because it's a custom class with a
-             * hardcoded recipient address, for example
+             * If the recipient already set on Mailable object (maybe because custom class with a hardcoded recipient),
+             * remove the hardcoded recipient, and store it in $recipients var so we can control it as per others. For
+             * example, if we're not on production and therefore want to send only to the "safety recipient".
              */
-            if ($email->to) {
-                /*
-                 * Get the value, and store it in case we don't actually want to sent to it (in case we're not on
-                 * production or something, and then it'll just be added if it's what we do want now that
-                 * "$recipientAddress" and "$recipientName" are set accordingly.
-                 */
-                $recipientFromMailable = reset($email->to);
-
-                /*
-                 * Unset "$recipientName" unset because if not specified by Mailable, we don't want to then use the
-                 * above-defined config-supplied default name with a mailable-provided address.
-                 */
-                $recipientName = null;
-
-                $recipientAddress = $recipientFromMailable['address'];
-                $recipientName = $recipientFromMailable['name'];
-
+            if (!empty($email->to)) {
+                foreach($email->to as $recipientFromMailable){
+                    $recipientsFromMailable[] = $recipientFromMailable;
+                }
+                $recipients = $recipientsFromMailable ?? [];
                 unset($email->to);
-                $email->to = [];
             }
         }
 
-        // 1.3 if not prod, discard previous and use safety
-        $production = app()->environment() === config('mailora.name-of-production-env');
-        if (!$production) {
-
-            $safetyEnabled = !env('DISABLE_MAILORA_LOCAL_MAIL_RECIPIENT_SAFETY_FEATURE');
-
-            if($safetyEnabled){
-                $recipientAddress = config('mailora.safety-recipient');
-                $recipientName = null; // unset because do not want to incorrectly add name to email
+        // If not production environment, discard previous $recipients values and use "safety" recipients configured
+        if (app()->environment() !== config('mailora.name-of-production-env')) {
+            if(!env('DISABLE_MAILORA_LOCAL_MAIL_RECIPIENT_SAFETY_FEATURE')){
+                $recipients = [config('mailora.safety-recipient')];
             }
         }
 
-        // PART 2 - set it
-
-        // 2.1 ensure allowed
-
-        $approved = true;
-
-        if ($public) {
-            $approved = false;
-
-            // part 1 of 2 - first check for approved domains
-            if (!empty($approvedRecipientDomains)) {
-                foreach ($approvedRecipientDomains as $approvedRecipientDomain) {
-                    $regexPattern = '^[A-Za-z0-9._%+-]+@' . $approvedRecipientDomain . '$^';
-                    $match = preg_match($regexPattern, $recipientAddress);
-                    if ($match) {
-                        $approved = true;
-                    }
-                }
-            }
-
-            // part 2 of 2 - if still no approval after trying the approved domains, then check for specific approved addresses
-            if (!$approved) {
-                foreach ($approvedRecipients as $approvedRecipient) {
-                    if ($recipientAddress === $approvedRecipient) {
-                        $approved = true;
-                    }
-                }
-            }
+        if(empty($recipients)){
+            throw new \Exception('No recipient(s) set.');
         }
 
-        if (!$approved) {
-            return false;
-        }
-
-        // 2.2 set it if allowed
-        if ($recipientName) {
-            $email->to([$recipientAddress], $recipientName);
-        } else { // must use *else*, or else will set *two* recipients, one with name, one without.
-            $email->to([$recipientAddress]);
+        foreach($recipients as $recipient){
+            if(is_array($recipient)){
+                $email->to($recipient['address'], $recipient['name']);
+            }else{
+                $email->to($recipient);
+            }
         }
 
         return true;
