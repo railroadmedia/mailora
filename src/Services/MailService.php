@@ -112,6 +112,7 @@ class MailService
         };
         $this->setSubject($input, $email);
         $this->setReplyTo($input, $email);
+        $this->setAttachments($input, $email);
 
         // if no message defined, make sure email doesn't break
         $input['message'] = !empty($input['message']) ? $input['message'] : '';
@@ -339,6 +340,27 @@ class MailService
 
             if ($user && $setUserAsReplyTo) {
                 $email->replyTo($userEmail);
+            }
+        }
+    }
+
+    private function setAttachments($input, Mailable &$email)
+    {
+        if(!empty($input['attachment'])) {
+            $input['attachments'][] = $input['attachment'];
+        }
+
+        if (!empty($input['attachments'])) {
+            foreach($input['attachments'] as $attachment){
+
+                /** @var \Illuminate\Http\UploadedFile $attachment */
+                $email->attach(
+                    $attachment,
+                    [
+                        'as' => $attachment->getClientOriginalName(),
+                        'mimeType' => $attachment->getClientMimeType()
+                    ]
+                );
             }
         }
     }
