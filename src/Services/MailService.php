@@ -353,6 +353,10 @@ class MailService
         if (!empty($input['attachments'])) {
             foreach($input['attachments'] as $attachment){
 
+                if(empty($attachment)){
+                    continue;
+                }
+
                 /** @var \Illuminate\Http\UploadedFile $attachment */
                 $email->attach(
                     $attachment,
