@@ -108,6 +108,9 @@ class MailService
                 error_log('Email does not have "lines" value that is array was transformable to array. $input is: "' . var_export($input, true) . '"');
             }
         }
+        
+        // if no message defined, make sure email doesn't break
+        $input['message'] = !empty($input['message']) ? $input['message'] : '';
 
         $email = $this->getMailable($input);
 
@@ -123,9 +126,6 @@ class MailService
         $this->setSubject($input, $email);
         $this->setReplyTo($input, $email);
         $this->setAttachments($input, $email);
-
-        // if no message defined, make sure email doesn't break
-        $input['message'] = !empty($input['message']) ? $input['message'] : '';
 
         Mail::send($email);
     }
