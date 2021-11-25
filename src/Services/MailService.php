@@ -323,7 +323,6 @@ class MailService
         if (!empty($input['reply-to'])) {
             $email->replyTo($input['reply-to']);
         } else {
-            $user = auth()->user();
 
             $requestDoesNotSpecify = true;
             $requestSaysToAllow = null;
@@ -339,17 +338,71 @@ class MailService
                 $setUserAsReplyTo = $requestSaysToAllow;
             }
 
-            try{
-                /** @var \Railroad\Usora\Entities\User $user */
-                $userEmail = $user->getEmail();
-            }
-            catch(Exception $e){
-                // in case mailora installed in application not using Usora
-                $userEmail = $user->email;
-            }
+            if($setUserAsReplyTo){
 
-            if ($user && $setUserAsReplyTo) {
-                $email->replyTo($userEmail);
+                // if an authenticated user is available use that
+                $user = auth()->user();
+
+                if(empty($user)){
+                    /*
+                     * This is all a hacky workaround for a particlar instance where there was not an authenticated user
+                     * and the email address was not passed and marked as such but rather was just the second item
+                     * in an array of unmarked values. This will only work in cases exactly like that, but it will get
+                     * that out the door quickly so that we can deal with this minor issue later rather than have it
+                     * hold things up. (Nov 2021)
+                     */
+                    if(!empty($input['lines'])){
+
+                        $userEmail = null;
+                        $candidate = explode(',', $input['lines'])[1];
+
+                        $emailToUseForValidation = $candidate;
+
+                        $offset = strpos($emailToUseForValidation, '@');
+                        $mightBeAnEmailAddress = $offset !== false;
+
+                        if($mightBeAnEmailAddress){
+
+                            // accomodate plus-address-forwarding since validation regex below does not
+                            $firstpartOfPotentialEmailAddress = substr($emailToUseForValidation, 0, $offset);
+                            $hasPlusSymbol = strpos($firstpartOfPotentialEmailAddress, '+') !== false;
+                            if($hasPlusSymbol){
+                                $emailToUseForValidation = str_replace('+', '', $emailToUseForValidation);
+                            }
+
+                            // not the best regex, but it does work most of the time so good enough in this case
+                            $pattern = '/^[^0-9][_a-z0-9-]+(\.[_a-z0-9-]+)*@[a-z0-9-]+(\.[a-z0-9-]+)*(\.[a-z]{2,3})$/';
+                            $userEmailAvailable = preg_match($pattern, $emailToUseForValidation);
+                            if($userEmailAvailable){
+                                $userEmail = $candidate;
+                            }
+                        }
+                    }
+
+                    if(!$userEmail){
+                        # no user email found, and thus cannot set reply-to address
+
+                    }
+                }else{
+                    try{
+                        /** @var \Railroad\Usora\Entities\User $user */
+                        $userEmail = $user->getEmail();
+                    }
+                    catch(Exception $e){
+                        // in case mailora installed in application not using Usora
+                        try{
+                            $userEmail = $user->email;
+                        }
+                        catch(Exception $e){
+                            // disregard trying to set a reply-to address
+                            $user = null;
+                        }
+                    }
+
+                    if ($user) {
+                        $email->replyTo($userEmail);
+                    }
+                }
             }
         }
     }
