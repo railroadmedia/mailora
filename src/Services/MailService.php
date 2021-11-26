@@ -71,6 +71,7 @@ class MailService
     public function sendPublic($input)
     {
         $this->ensureConfigSet(true);
+
         $email = $this->getMailable($input);
 
         if ($email === false) {
@@ -84,6 +85,7 @@ class MailService
         };
         $this->setSubject($input, $email);
         $this->setReplyTo($input, $email);
+        $this->setAttachments($input, $email);
 
         // if no message defined, make sure email doesn't break
         $input['message'] = !empty($input['message']) ? $input['message'] : '';
@@ -100,15 +102,6 @@ class MailService
     {
         $this->ensureConfigSet();
 
-        if(!is_array($input['lines'])){
-            try{
-                $input['lines'] = explode(',',$input['lines']);
-            }catch(\Exception $e){
-                error_log($e);
-                error_log('Email does not have "lines" value that is array was transformable to array. $input is: "' . var_export($input, true) . '"');
-            }
-        }
-        
         // if no message defined, make sure email doesn't break
         $input['message'] = !empty($input['message']) ? $input['message'] : '';
 
