@@ -352,6 +352,13 @@ class MailService
         }
 
         if (!empty($input['attachments'])) {
+
+            if(count($input['attachments']) === 1){
+                if (reset($input['attachments']) === 'null'){
+                    $input['attachments'] = [];
+                }
+            }
+
             foreach($input['attachments'] as $attachment){
 
                 if(empty($attachment)){
