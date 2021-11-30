@@ -5,6 +5,7 @@ namespace Railroad\Mailora\Services;
 use Exception;
 use Illuminate\Mail\Mailable;
 use Illuminate\Support\Facades\Mail;
+use Railroad\Usora\Entities\User;
 
 class MailService
 {
@@ -84,6 +85,7 @@ class MailService
         };
         $this->setSubject($input, $email);
         $this->setReplyTo($input, $email);
+        $this->setAttachments($input, $email);
 
         // if no message defined, make sure email doesn't break
         $input['message'] = !empty($input['message']) ? $input['message'] : '';
@@ -99,7 +101,7 @@ class MailService
     public function sendSecure($input)
     {
         $this->ensureConfigSet();
-        
+
         // if no message defined, make sure email doesn't break
         $input['message'] = !empty($input['message']) ? $input['message'] : '';
 
@@ -130,7 +132,6 @@ class MailService
      */
     private function getMailable($input)
     {
-        $emailClass = null;
         $type = $this->getEmailType($input);
         $view = $this->getView($type, $input);
         $emailClass = $this->getEmailClass($type);
@@ -314,8 +315,6 @@ class MailService
         if (!empty($input['reply-to'])) {
             $email->replyTo($input['reply-to']);
         } else {
-            $user = auth()->user();
-
             $requestDoesNotSpecify = true;
             $requestSaysToAllow = null;
 
@@ -330,17 +329,19 @@ class MailService
                 $setUserAsReplyTo = $requestSaysToAllow;
             }
 
-            try{
-                /** @var \Railroad\Usora\Entities\User $user */
-                $userEmail = $user->getEmail();
-            }
-            catch(Exception $e){
-                // in case mailora installed in application not using Usora
-                $userEmail = $user->email;
-            }
+            if($setUserAsReplyTo){
 
-            if ($user && $setUserAsReplyTo) {
-                $email->replyTo($userEmail);
+                // if an authenticated user is available use that
+                $user = current_user();
+
+                if(is_a($user, User::class)){
+                    /** @var User $user */
+                    $userEmail = $user->getEmail();
+
+                    if ($user) {
+                        $email->replyTo($userEmail);
+                    }
+                }
             }
         }
     }
@@ -456,8 +457,6 @@ class MailService
 
     private function getEmailClass($type)
     {
-        $potentialClass = null;
-
         // default to native version of Mailable class
         $emailClass = '\Railroad\Mailora\Mail\General';
 
