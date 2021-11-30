@@ -99,16 +99,6 @@ class MailService
     public function sendSecure($input)
     {
         $this->ensureConfigSet();
-
-        if(!is_array($input['lines'])){
-            try{
-                $input['lines'] = explode(',',$input['lines']);
-            }catch(\Exception $e){
-                error_log($e);
-                error_log('Email does not have "lines" value that is array was transformable to array. $input is: "' . var_export($input, true) . '"');
-            }
-        }
-
         $email = $this->getMailable($input);
 
         if ($email === false) {
