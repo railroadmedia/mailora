@@ -99,6 +99,10 @@ class MailService
     public function sendSecure($input)
     {
         $this->ensureConfigSet();
+        
+        // if no message defined, make sure email doesn't break
+        $input['message'] = !empty($input['message']) ? $input['message'] : '';
+
         $email = $this->getMailable($input);
 
         if ($email === false) {
@@ -113,9 +117,6 @@ class MailService
         $this->setSubject($input, $email);
         $this->setReplyTo($input, $email);
         $this->setAttachments($input, $email);
-
-        // if no message defined, make sure email doesn't break
-        $input['message'] = !empty($input['message']) ? $input['message'] : '';
 
         Mail::send($email);
     }
@@ -351,6 +352,13 @@ class MailService
         }
 
         if (!empty($input['attachments'])) {
+
+            if(count($input['attachments']) === 1){
+                if (reset($input['attachments']) === 'null'){
+                    $input['attachments'] = [];
+                }
+            }
+
             foreach($input['attachments'] as $attachment){
 
                 if(empty($attachment)){
