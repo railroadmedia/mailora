@@ -465,13 +465,24 @@ class MailService
         }
 
         // get name of class to look for
-        $potentialNamespace = config('mailora.mailables-namespace');
         $this->ensureSlashes($customNamespace, true);
-        $potentialClass = $potentialNamespace . $this->dashesToCamelCase($type, true);
+        $potentialClass = 'Railroad\\Mailora\\Mail\\' . $this->dashesToCamelCase($type, true);
 
         // override default with custom if it exists
         if (class_exists($potentialClass)) {
             $emailClass = $potentialClass;
+        }
+
+        if (!$emailClass) {
+            // get name of class to look for
+            $potentialNamespace = config('mailora.mailables-namespace');
+            $this->ensureSlashes($customNamespace, true);
+            $potentialClass = $potentialNamespace . $this->dashesToCamelCase($type, true);
+
+            // override default with custom if it exists
+            if (class_exists($potentialClass)) {
+                $emailClass = $potentialClass;
+            }
         }
 
         if (!$emailClass) {
