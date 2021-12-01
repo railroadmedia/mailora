@@ -80,7 +80,7 @@ class MailService
 
         $this->setSender($input, $email);
         if (!$this->checkAndSetRecipient($input, $email)) {
-            $this->error('Unauthorized recipient attempted. ($input: ' . json_encode($input) . ' )');
+            self::error('Unauthorized recipient attempted. ($input: ' . json_encode($input) . ' )');
             return false;
         };
         $this->setSubject($input, $email);
@@ -113,7 +113,7 @@ class MailService
 
         $this->setSender($input, $email);
         if (!$this->checkAndSetRecipient($input, $email, false)) {
-            $this->error('Unauthorized recipient attempted. ($input: ' . json_encode($input) . ' )');
+            self::error('Unauthorized recipient attempted. ($input: ' . json_encode($input) . ' )');
             return false;
         };
         $this->setSubject($input, $email);
@@ -390,7 +390,7 @@ class MailService
         return $str;
     }
 
-    private function error($message)
+    private static function error($message)
     {
         error_log($message);
 
@@ -400,7 +400,7 @@ class MailService
         }
     }
 
-    private function ensureSlashes(&$string, $backslashes = false, $omitFirstSlash = false, $omitLastSlash = false)
+    private static function ensureSlashes(&$string, $backslashes = false, $omitFirstSlash = false, $omitLastSlash = false)
     {
         $slash = $backslashes ? '\\' : '/';
 
@@ -429,15 +429,15 @@ class MailService
         return $type;
     }
 
-    private function getView($type, $input)
+    public static function getView($type, $input)
     {
         $view = 'mailora::general';
 
         $viewsRootDir = config('mailora.views-root-directory') ?? '/resources/views/';
         $viewsEmailDir = config('mailora.views-email-directory') ?? 'emails';
 
-        $this->ensureSlashes($viewsRootDir);
-        $this->ensureSlashes($viewsEmailDir, false, true);
+        self::ensureSlashes($viewsRootDir);
+        self::ensureSlashes($viewsEmailDir, false, true);
 
         $customPotentialViewPathTruncated = $viewsEmailDir . $type;
         $customPotentialViewPathFull = base_path() . $viewsRootDir . $customPotentialViewPathTruncated . '.blade.php';
@@ -448,7 +448,7 @@ class MailService
             if ($type !== 'general') {
                 $message = 'Custom type specified does have corresponding custom view. Email not sent. ';
                 $message .= json_encode($input);
-                $this->error($message);
+                self::error($message);
                 return false;
             }
         }
@@ -462,7 +462,7 @@ class MailService
         $emailClass = '\Railroad\Mailora\Mail\General';
 
         if (!class_exists($emailClass)) {
-            $this->error('package general Mailable class ( ' . $emailClass . ') not found');
+            self::error('package general Mailable class ( ' . $emailClass . ') not found');
         }
 
         // get name of class to look for
@@ -487,7 +487,7 @@ class MailService
         }
 
         if (!$emailClass) {
-            $this->error(
+            self::error(
                 '$emailClass ( ' . var_export($emailClass, true) .
                 ') was not defined in \Railroad\Mailora\Services\MailService::getMailable'
             );
