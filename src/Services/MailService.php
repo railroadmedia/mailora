@@ -352,14 +352,21 @@ class MailService
             $input['attachments'][] = $input['attachment'];
         }
 
-        if (!empty($input['attachments'])) {
+        // handling for unique situation for contact-pages-update Nov 2021
+        if (!empty($input['attachment']) && $input['attachment'] === 'null') {
+            unset($input['attachment']);
+        }
 
-            if(count($input['attachments']) === 1){
-                if (reset($input['attachments']) === 'null'){
-                    $input['attachments'] = [];
+        // handling for unique situation for contact-pages-update Nov 2021
+        if (!empty($input['attachments'])) {
+            if (count($input['attachments']) === 1) {
+                if (reset($input['attachments']) === 'null') {
+                    unset($input['attachments']);
                 }
             }
+        }
 
+        if (!empty($input['attachments'])) {
             foreach($input['attachments'] as $attachment){
 
                 if(empty($attachment)){
