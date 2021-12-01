@@ -6,21 +6,29 @@ use Illuminate\Bus\Queueable;
 use Illuminate\Mail\Mailable;
 use Illuminate\Queue\SerializesModels;
 
-class General extends Mailable
+class SupportContact extends Mailable
 {
     use Queueable, SerializesModels;
+
     public $input;
+    public $view;
 
     /**
      * Create a new message instance.
      *
-     * @param $input
-     * @param $view
+     * @return void
      */
     public function __construct($input, $view)
     {
         $this->input = $input;
         $this->view = $view;
+
+        $this->input = $input;
+        if(!empty(current_user())){
+            $this->input['studentName'] = current_user()->getDisplayName();
+            $this->input['studentEmail'] = current_user()->getEmail();
+            $this->input['studentId'] = current_user()->getId();
+        }
     }
 
     /**
