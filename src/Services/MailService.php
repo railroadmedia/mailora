@@ -352,24 +352,18 @@ class MailService
             $input['attachments'][] = $input['attachment'];
         }
 
-        // handling for unique situation for contact-pages-update Nov 2021
-        if (!empty($input['attachment']) && $input['attachment'] === 'null') {
-            unset($input['attachment']);
+        // if we don't clear these, we may mis-count the number of attachments if we want to display that count
+        if(!empty($email->input['attachment'])){
+            unset($email->input['attachment']);
         }
-
-        // handling for unique situation for contact-pages-update Nov 2021
-        if (!empty($input['attachments'])) {
-            if (count($input['attachments']) === 1) {
-                if (reset($input['attachments']) === 'null') {
-                    unset($input['attachments']);
-                }
-            }
+        if(!empty($email->input['attachments'])){
+            unset($email->input['attachments']);
         }
 
         if (!empty($input['attachments'])) {
             foreach($input['attachments'] as $attachment){
 
-                if(empty($attachment)){
+                if(empty($attachment) || $attachment === 'null'){
                     continue;
                 }
 
