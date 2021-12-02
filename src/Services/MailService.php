@@ -348,24 +348,16 @@ class MailService
 
     private function setAttachments($input, Mailable &$email)
     {
-        if(!empty($input['attachment'])) {
-            $input['attachments'][] = $input['attachment'];
-        }
-
-        // if we don't clear these, we may mis-count the number of attachments if we want to display that count
-        if(!empty($email->input['attachment'])){
+        if($email->input['attachment'] === 'null'){
             unset($email->input['attachment']);
         }
-        if(!empty($email->input['attachments'])){
-            unset($email->input['attachments']);
+
+        if(!empty($email->input['attachment'])) {
+            $email->input['attachments'][] = $email->input['attachment'];
         }
 
-        if (!empty($input['attachments'])) {
-            foreach($input['attachments'] as $attachment){
-
-                if(empty($attachment) || $attachment === 'null'){
-                    continue;
-                }
+        if (!empty($email->input['attachments'])) {
+            foreach($email->input['attachments'] as $key => $attachment){
 
                 /** @var \Illuminate\Http\UploadedFile $attachment */
                 $email->attach(
