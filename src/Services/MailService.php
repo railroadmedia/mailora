@@ -315,32 +315,9 @@ class MailService
         if (!empty($input['reply-to'])) {
             $email->replyTo($input['reply-to']);
         } else {
-            $requestDoesNotSpecify = true;
-            $requestSaysToAllow = null;
-
-            if (!empty($input['users-email-set-reply-to'])) {
-                $requestSaysToAllow = $input['users-email-set-reply-to'] === true;
-                $requestDoesNotSpecify = false;
-            }
-
-            if ($requestDoesNotSpecify === true) {
-                $setUserAsReplyTo = config('mailora.defaults.users-email-set-reply-to');
-            } else {
-                $setUserAsReplyTo = $requestSaysToAllow;
-            }
-
-            if($setUserAsReplyTo){
-
-                // if an authenticated user is available use that
-                $user = current_user();
-
-                if(is_a($user, User::class)){
-                    /** @var User $user */
-                    $userEmail = $user->getEmail();
-
-                    if ($user) {
-                        $email->replyTo($userEmail);
-                    }
+            if($input['users-email-set-reply-to'] ?? config('mailora.defaults.users-email-set-reply-to', false)){
+                if(current_user()){
+                    $email->replyTo(current_user()->getEmail());
                 }
             }
         }
@@ -348,7 +325,7 @@ class MailService
 
     private function setAttachments($input, Mailable &$email)
     {
-        if($email->input['attachment'] === 'null'){
+        if($email->input['attachment'] ?? null === 'null'){
             unset($email->input['attachment']);
         }
 
