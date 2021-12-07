@@ -5,7 +5,6 @@ namespace Railroad\Mailora\Services;
 use Exception;
 use Illuminate\Mail\Mailable;
 use Illuminate\Support\Facades\Mail;
-use Railroad\Usora\Entities\User;
 
 class MailService
 {
@@ -296,17 +295,9 @@ class MailService
 
     private function setSubject($input, Mailable &$email)
     {
-        $subject = 'General Inquiry - Subject not specified';
-
-        if (config('mailora.defaults.subject')) {
-            $subject = config('mailora.defaults.subject');
-        }
-
-        if (!empty($input['subject'])) {
-            $subject = $input['subject'];
-        }
-
-        $email->subject($subject);
+        $email->subject(
+            $input['subject'] ?? config('mailora.defaults.subject', 'General Inquiry - Subject not specified')
+        );
     }
 
     private function setReplyTo($input, Mailable &$email)
@@ -324,16 +315,12 @@ class MailService
 
     private function setAttachments($input, Mailable &$email)
     {
-        if ($email->input['attachment'] ?? null === 'null') {
-            unset($email->input['attachment']);
+        if (!empty($input['attachment'])) {
+            $input['attachments'][] = $input['attachment'];
         }
 
-        if (!empty($email->input['attachment'])) {
-            $email->input['attachments'][] = $email->input['attachment'];
-        }
-
-        if (!empty($email->input['attachments'])) {
-            foreach ($email->input['attachments'] as $key => $attachment) {
+        foreach ($input['attachments'] ?? [] as $attachment) {
+            if (is_a(\Illuminate\Http\UploadedFile::class, $attachment)) {
                 /** @var \Illuminate\Http\UploadedFile $attachment */
                 $email->attach(
                     $attachment,
@@ -393,11 +380,7 @@ class MailService
 
     private function getEmailType($input)
     {
-        $type = config('mailora.defaults.type') ?? 'general';
-        if (!empty($input['type'])) {
-            $type = $input['type'];
-        }
-        return $type;
+        return $input['type'] ?? config('mailora.defaults.type', 'general');
     }
 
     public static function getView($type, $input)
