@@ -86,9 +86,6 @@ class MailService
         $this->setReplyTo($input, $email);
         $this->setAttachments($input, $email);
 
-        // if no message defined, make sure email doesn't break
-        $input['message'] = !empty($input['message']) ? $input['message'] : '';
-
         Mail::send($email);
     }
 
@@ -100,10 +97,6 @@ class MailService
     public function sendSecure($input)
     {
         $this->ensureConfigSet();
-
-        // if no message defined, make sure email doesn't break
-        $input['message'] = !empty($input['message']) ? $input['message'] : '';
-
         $email = $this->getMailable($input);
 
         if ($email === false) {
@@ -131,6 +124,8 @@ class MailService
      */
     private function getMailable($input)
     {
+        $input['message'] = $input['message'] ?? '';
+
         $type = $this->getEmailType($input);
         $view = $this->getView($type, $input);
         $emailClass = $this->getEmailClass($type);
@@ -333,17 +328,6 @@ class MailService
         }
     }
 
-    private function dashesToCamelCase($string, $capitalizeFirstCharacter = false)
-    {
-        $str = str_replace('-', '', ucwords($string, '-'));
-
-        if (!$capitalizeFirstCharacter) {
-            $str = lcfirst($str);
-        }
-
-        return $str;
-    }
-
     private static function error($message)
     {
         error_log($message);
@@ -410,44 +394,26 @@ class MailService
         return $view;
     }
 
-    private function getEmailClass($type)
+    /**
+     * @param $type
+     * @return string
+     */
+    private function getEmailClass($type): string
     {
-        // default to native version of Mailable class
-        $emailClass = '\Railroad\Mailora\Mail\General';
+        $typePascalCased = str_replace('-', '', ucwords($type, '-'));
 
-        if (!class_exists($emailClass)) {
-            self::error('package general Mailable class ( ' . $emailClass . ') not found');
+        $prospectiveClassFromMailora = 'Railroad\\Mailora\\Mail\\' . $typePascalCased;
+
+        if (class_exists($prospectiveClassFromMailora)) {
+            $emailClass = $prospectiveClassFromMailora;
         }
 
-        // get name of class to look for
-        $this->ensureSlashes($customNamespace, true);
-        $potentialClass = 'Railroad\\Mailora\\Mail\\' . $this->dashesToCamelCase($type, true);
+        $prospectiveClassFromApplication = config('mailora.mailables-namespace') . $typePascalCased;
 
-        // override default with custom if it exists
-        if (class_exists($potentialClass)) {
-            $emailClass = $potentialClass;
+        if (class_exists($prospectiveClassFromApplication)) {
+            $emailClass = $prospectiveClassFromApplication;
         }
 
-        if (!$emailClass) {
-            // get name of class to look for
-            $potentialNamespace = config('mailora.mailables-namespace');
-            $this->ensureSlashes($customNamespace, true);
-            $potentialClass = $potentialNamespace . $this->dashesToCamelCase($type, true);
-
-            // override default with custom if it exists
-            if (class_exists($potentialClass)) {
-                $emailClass = $potentialClass;
-            }
-        }
-
-        if (!$emailClass) {
-            self::error(
-                '$emailClass ( ' . var_export($emailClass, true) .
-                ') was not defined in \Railroad\Mailora\Services\MailService::getMailable'
-            );
-            return false;
-        }
-
-        return $emailClass;
+        return $emailClass ?? '\Railroad\Mailora\Mail\General';
     }
 }
