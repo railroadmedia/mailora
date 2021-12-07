@@ -174,58 +174,57 @@ class MailService
         $approvedRecipients = config('mailora.approved-recipients');
         $approvedRecipientDomains = config('mailora.approved-recipient-domains');
 
-        $recipients = [[
-            'address' => config('mailora.defaults.recipient-address'),
-            'name' => config('mailora.defaults.recipient-name')
-        ]];
+        $recipients = [
+            [
+                'address' => config('mailora.defaults.recipient-address'),
+                'name' => config('mailora.defaults.recipient-name')
+            ]
+        ];
 
         // if recipients provided by request, use them
-        if ( !empty($input['recipient-address']) || !empty($input['recipient']) ) {
-
+        if (!empty($input['recipient-address']) || !empty($input['recipient'])) {
             $recipientDecoded = json_decode($input['recipient'], true);
 
-            if(is_array($recipientDecoded)){
-
+            if (is_array($recipientDecoded)) {
                 $extractedRecipients = [];
 
-                foreach($recipientDecoded as $key => $value){
-                    if(is_array($value)){
+                foreach ($recipientDecoded as $key => $value) {
+                    if (is_array($value)) {
                         $aRecipient = [];
-                        foreach($value as $subKey => $subValue){
-                            if($subKey === 'name' || $subKey === 'address'){
+                        foreach ($value as $subKey => $subValue) {
+                            if ($subKey === 'name' || $subKey === 'address') {
                                 $aRecipient[$subKey] = $subValue;
                             }
                         }
                         $extractedRecipients[] = $aRecipient;
                     }
-                    if( is_string($value) ){
-                        if(count($recipientDecoded) >= 2){
+                    if (is_string($value)) {
+                        if (count($recipientDecoded) >= 2) {
                             $extractedRecipients[] = $value;
-                        }else{
+                        } else {
                             $extractedRecipients = $recipientDecoded;
                         }
                     }
                 }
 
                 $recipients = $extractedRecipients;
-            }else{
+            } else {
                 $recipientAddress = $input['recipient-address'] ?? $input['recipient'];
                 $recipients = [$recipientAddress];
                 if (!empty($input['recipient-name'])) {
                     $recipientName = $input['recipient-name'];
-                    $recipients = [ ['address' => $recipientAddress, 'name' => $recipientName] ];
+                    $recipients = [['address' => $recipientAddress, 'name' => $recipientName]];
                 }
             }
 
             // if request supplies recipient AND mailable has a recipient hardcoded, discard latter to use former only
-            if($email->to){
+            if ($email->to) {
                 unset($email->to);
                 $email->to = [];
             }
 
             if ($public) {
                 foreach ($recipients as $key => $recipient) {
-
                     $addressApproved = false;
                     if (gettype($recipient) === 'array') {
                         $address = $recipient['address'];
@@ -265,7 +264,7 @@ class MailService
              * example, if we're not on production and therefore want to send only to the "safety recipient".
              */
             if (!empty($email->to)) {
-                foreach($email->to as $recipientFromMailable){
+                foreach ($email->to as $recipientFromMailable) {
                     $recipientsFromMailable[] = $recipientFromMailable;
                 }
                 $recipients = $recipientsFromMailable ?? [];
@@ -275,19 +274,19 @@ class MailService
 
         // If not production environment, discard previous $recipients values and use "safety" recipients configured
         if (app()->environment() !== config('mailora.name-of-production-env')) {
-            if(!env('DISABLE_MAILORA_LOCAL_MAIL_RECIPIENT_SAFETY_FEATURE')){
+            if (!env('DISABLE_MAILORA_LOCAL_MAIL_RECIPIENT_SAFETY_FEATURE')) {
                 $recipients = [config('mailora.safety-recipient')];
             }
         }
 
-        if(empty($recipients)){
+        if (empty($recipients)) {
             throw new \Exception('No recipient(s) set.');
         }
 
-        foreach($recipients as $recipient){
-            if(is_array($recipient)){
+        foreach ($recipients as $recipient) {
+            if (is_array($recipient)) {
                 $email->to($recipient['address'], $recipient['name']);
-            }else{
+            } else {
                 $email->to($recipient);
             }
         }
@@ -315,8 +314,8 @@ class MailService
         if (!empty($input['reply-to'])) {
             $email->replyTo($input['reply-to']);
         } else {
-            if($input['users-email-set-reply-to'] ?? config('mailora.defaults.users-email-set-reply-to', false)){
-                if(current_user()){
+            if ($input['users-email-set-reply-to'] ?? config('mailora.defaults.users-email-set-reply-to', false)) {
+                if (current_user()) {
                     $email->replyTo(current_user()->getEmail());
                 }
             }
@@ -325,17 +324,16 @@ class MailService
 
     private function setAttachments($input, Mailable &$email)
     {
-        if($email->input['attachment'] ?? null === 'null'){
+        if ($email->input['attachment'] ?? null === 'null') {
             unset($email->input['attachment']);
         }
 
-        if(!empty($email->input['attachment'])) {
+        if (!empty($email->input['attachment'])) {
             $email->input['attachments'][] = $email->input['attachment'];
         }
 
         if (!empty($email->input['attachments'])) {
-            foreach($email->input['attachments'] as $key => $attachment){
-
+            foreach ($email->input['attachments'] as $key => $attachment) {
                 /** @var \Illuminate\Http\UploadedFile $attachment */
                 $email->attach(
                     $attachment,
@@ -369,8 +367,12 @@ class MailService
         }
     }
 
-    private static function ensureSlashes(&$string, $backslashes = false, $omitFirstSlash = false, $omitLastSlash = false)
-    {
+    private static function ensureSlashes(
+        &$string,
+        $backslashes = false,
+        $omitFirstSlash = false,
+        $omitLastSlash = false
+    ) {
         $slash = $backslashes ? '\\' : '/';
 
         if ($string) {
