@@ -85,7 +85,7 @@ class MailService
         };
         $this->setSubject($input, $email);
         $this->setReplyTo($input, $email);
-        $this->setAttachments($input, $email);
+        $this->setAttachments($email);
 
         // if no message defined, make sure email doesn't break
         $input['message'] = !empty($input['message']) ? $input['message'] : '';
@@ -118,7 +118,7 @@ class MailService
         };
         $this->setSubject($input, $email);
         $this->setReplyTo($input, $email);
-        $this->setAttachments($input, $email);
+        $this->setAttachments($email);
 
         Mail::send($email);
     }
@@ -346,19 +346,26 @@ class MailService
         }
     }
 
-    private function setAttachments($input, Mailable &$email)
+    private function setAttachments(Mailable &$email)
     {
-        if($email->input['attachment'] === 'null'){
-            unset($email->input['attachment']);
+        // sometimes we get a string 'null' rather than literal null because that's just the way the axios frontend
+        // forms seem to work. So, disregard such cases by just unsetting the value.
+
+        if(!empty($email->input['attachment']) ){
+            if($email->input['attachment'] === 'null'){
+                unset($email->input['attachment']);
+            }
         }
+
+        // if input specified singular version of param, just add it to the plural version because we then just loop
+        // through the plural version of the param
 
         if(!empty($email->input['attachment'])) {
             $email->input['attachments'][] = $email->input['attachment'];
         }
 
         if (!empty($email->input['attachments'])) {
-            foreach($email->input['attachments'] as $key => $attachment){
-
+            foreach($email->input['attachments'] as $attachment){
                 /** @var \Illuminate\Http\UploadedFile $attachment */
                 $email->attach(
                     $attachment,
