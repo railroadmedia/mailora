@@ -9,7 +9,8 @@ return [
     'approved-recipient-domains' => '',
 
     // required to make "authentication-protected" route work
-    'auth_middleware' => [],
+    'route_middleware_public_groups' => ['mailora_public'],
+    'route_middleware_logged_in_groups' => ['mailora_logged_in'],
 
     // 1. Advanced, see documentation for details
     'views-root-directory' => 'resources/views',
