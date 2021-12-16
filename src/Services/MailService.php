@@ -71,6 +71,8 @@ class MailService
      */
     public function sendPublic($input)
     {
+        $this->legacyPrepLines($input);
+
         $this->ensureConfigSet(true);
         $email = $this->getMailable($input);
 
@@ -100,6 +102,8 @@ class MailService
      */
     public function sendSecure($input)
     {
+        $this->legacyPrepLines($input);
+
         $this->ensureConfigSet();
 
         // if no message defined, make sure email doesn't break
@@ -124,6 +128,20 @@ class MailService
     }
 
     // -----------------------------------------------------------
+
+    /*
+     * This is a bandaid to quickly address a bad design decision that's come back to bite me. Specifically the idea
+     * of the "lines" input. It's all wrong and needs to be fixed. This fix works only because all mailora usage before
+     * the contact-pages-update all used the same "type" (think view).
+     */
+    private function legacyPrepLines(&$input)
+    {
+        if($input['type'] === 'layouts/inline/alert'){
+            if(is_string($input['lines'])){
+                $input['lines'] = explode(',', $input['lines']);
+            }
+        }
+    }
 
     /**
      * @param $input
@@ -352,7 +370,7 @@ class MailService
         // forms seem to work. So, disregard such cases by just unsetting the value.
 
         if(!empty($email->input['attachment']) ){
-            if($email->input['attachment'] === 'null'){
+            if($email->input['attachment'] === 'null' || $email->input['attachment'] === 'undefined'){
                 unset($email->input['attachment']);
             }
         }
