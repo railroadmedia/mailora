@@ -359,6 +359,14 @@ class MailService
                     if ($user) {
                         $email->replyTo($userEmail);
                     }
+                }else{
+                    $typeIsSupportContact = ($input['type'] ?? '')  === 'support-contact';
+                    $studentEmailIsSet= !empty($input['studentEmail']);
+                    $useStudentEmailValueAsReplyTo = $typeIsSupportContact && $studentEmailIsSet;
+
+                    if($useStudentEmailValueAsReplyTo){
+                        $email->replyTo($input['studentEmail']);
+                    }
                 }
             }
         }
