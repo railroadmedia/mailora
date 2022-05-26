@@ -32,13 +32,14 @@ class MailController
             $this->mailService->sendPublic($input);
         } catch (\Exception $exception) {
             error_log($exception->getMessage());
-            if($this->returnErrorDetailsOnFailure){
-                return JsonResponse::create(['error' => 'see error_log for details'], 500);
+            if ($this->returnErrorDetailsOnFailure) {
+                return response()->json(['error' => 'see error_log for details'], 500);
             }
         }
 
-        return JsonResponse::create(['sent' => true], 200);
+        return response()->json(['sent' => true], 200);
     }
+
 
     public function sendSecure(Request $request)
     {
@@ -47,11 +48,11 @@ class MailController
             $this->mailService->sendSecure($input);
         } catch (\Exception $exception) {
             error_log($exception->getMessage());
-            if($this->returnErrorDetailsOnFailure){
-                return JsonResponse::create(['error' => $exception->getMessage()], 500);
+            if ($this->returnErrorDetailsOnFailure) {
+                return response()->json(['error' => $exception->getMessage()], 500);
             }
-            return JsonResponse::create(['error' => 'see error_log for details'], 500);
+            return response()->json(['error' => $exception->getMessage()], 500);
         }
-        return JsonResponse::create(['sent' => true], 200);
+        return response()->json(['sent' => true], 200);
     }
 }

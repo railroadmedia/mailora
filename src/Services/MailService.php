@@ -8,6 +8,123 @@ use Illuminate\Support\Facades\Mail;
 
 class MailService
 {
+    public static function getView($type, $input)
+    {
+        $view = 'mailora::general';
+
+        $viewsRootDir = config('mailora.views-root-directory') ?? '/resources/views/';
+        $viewsEmailDir = config('mailora.views-email-directory') ?? 'emails';
+
+        self::ensureSlashes($viewsRootDir);
+        self::ensureSlashes($viewsEmailDir, false, true);
+
+        $customPotentialViewPathTruncated = $viewsEmailDir . $type;
+        $customPotentialViewPathFull = base_path() . $viewsRootDir . $customPotentialViewPathTruncated . '.blade.php';
+
+        if (file_exists($customPotentialViewPathFull)) {
+            $view = $customPotentialViewPathTruncated;
+        } else {
+            if ($type !== 'general') {
+                $message = 'Custom type specified does have corresponding custom view. Email not sent. ';
+                $message .= json_encode($input);
+                self::error($message);
+                return false;
+            }
+        }
+
+        return $view;
+    }
+
+    private static function error($message)
+    {
+        error_log($message);
+
+        if (config('mailora.admin')) {
+            $adminEmailAddressToSendMessageTo = config('mailora.admin');
+            // todo: send email with $message
+        }
+    }
+
+    private static function ensureSlashes(
+        &$string,
+        $backslashes = false,
+        $omitFirstSlash = false,
+        $omitLastSlash = false
+    ) {
+        $slash = $backslashes ? '\\' : '/';
+
+        if ($string) {
+            if (!$omitFirstSlash) {
+                $startsWithForwardSlash = substr($string, 0, 1) === $slash;
+                if (!$startsWithForwardSlash) {
+                    $string = $slash . $string;
+                }
+            }
+            if (!$omitLastSlash) {
+                $endsWithForwardSlash = substr($string, -1) === $slash;
+                if (!$endsWithForwardSlash) {
+                    $string = $string . $slash;
+                }
+            }
+        }
+    }
+
+    // -----------------------------------------------------------
+
+    /**
+     * @param $input array
+     * @return bool|Exception
+     * @throws Exception
+     */
+    public function sendPublic($input)
+    {
+        $this->ensureConfigSet(true);
+        $email = $this->getMailable($input);
+
+        if ($email === false) {
+            return false;
+        }
+
+        $this->setSender($input, $email);
+        if (!$this->checkAndSetRecipient($input, $email)) {
+            self::error('Unauthorized recipient attempted. ($input: ' . json_encode($input) . ' )');
+            return false;
+        };
+        $this->setSubject($input, $email);
+        $this->setReplyTo($input, $email);
+        $this->setAttachments($input, $email);
+
+        Mail::send($email);
+    }
+
+    /**
+     * @param $input
+     * @return bool|Exception
+     * @throws Exception
+     */
+    public function sendSecure($input)
+    {
+        $this->ensureConfigSet();
+
+        $email = $this->getMailable($input);
+
+        if ($email === false) {
+            return false;
+        }
+
+        $this->setSender($input, $email);
+        if (!$this->checkAndSetRecipient($input, $email, false)) {
+            self::error('Unauthorized recipient attempted. ($input: ' . json_encode($input) . ' )');
+            return false;
+        };
+        $this->setSubject($input, $email);
+        $this->setReplyTo($input, $email);
+        $this->setAttachments($input, $email);
+
+        // eroare parse view; probabil template-ul nu e pregatit
+        Mail::send($email);
+    }
+
     /**
      * @param bool $public
      * @throws Exception
@@ -62,60 +179,6 @@ class MailService
             );
         }
     }
-
-    /**
-     * @param $input array
-     * @return bool|Exception
-     * @throws Exception
-     */
-    public function sendPublic($input)
-    {
-        $this->ensureConfigSet(true);
-        $email = $this->getMailable($input);
-
-        if ($email === false) {
-            return false;
-        }
-
-        $this->setSender($input, $email);
-        if (!$this->checkAndSetRecipient($input, $email)) {
-            self::error('Unauthorized recipient attempted. ($input: ' . json_encode($input) . ' )');
-            return false;
-        };
-        $this->setSubject($input, $email);
-        $this->setReplyTo($input, $email);
-        $this->setAttachments($input, $email);
-
-        Mail::send($email);
-    }
-
-    /**
-     * @param $input
-     * @return bool|Exception
-     * @throws Exception
-     */
-    public function sendSecure($input)
-    {
-        $this->ensureConfigSet();
-        $email = $this->getMailable($input);
-
-        if ($email === false) {
-            return false;
-        }
-
-        $this->setSender($input, $email);
-        if (!$this->checkAndSetRecipient($input, $email, false)) {
-            self::error('Unauthorized recipient attempted. ($input: ' . json_encode($input) . ' )');
-            return false;
-        };
-        $this->setSubject($input, $email);
-        $this->setReplyTo($input, $email);
-        $this->setAttachments($input, $email);
-
-        Mail::send($email);
-    }
-
-    // -----------------------------------------------------------
 
     /**
      * @param $input
@@ -301,8 +364,8 @@ class MailService
             $email->replyTo($input['reply-to']);
         } else {
             if ($input['users-email-set-reply-to'] ?? config('mailora.defaults.users-email-set-reply-to', false)) {
-                if (current_user()) {
-                    $email->replyTo(current_user()->getEmail());
+                if (auth()->user()) {
+                    $email->replyTo(auth()->user()->email);
                 }
             }
         }
@@ -328,70 +391,9 @@ class MailService
         }
     }
 
-    private static function error($message)
-    {
-        error_log($message);
-
-        if (config('mailora.admin')) {
-            $adminEmailAddressToSendMessageTo = config('mailora.admin');
-            // todo: send email with $message
-        }
-    }
-
-    private static function ensureSlashes(
-        &$string,
-        $backslashes = false,
-        $omitFirstSlash = false,
-        $omitLastSlash = false
-    ) {
-        $slash = $backslashes ? '\\' : '/';
-
-        if ($string) {
-            if (!$omitFirstSlash) {
-                $startsWithForwardSlash = substr($string, 0, 1) === $slash;
-                if (!$startsWithForwardSlash) {
-                    $string = $slash . $string;
-                }
-            }
-            if (!$omitLastSlash) {
-                $endsWithForwardSlash = substr($string, -1) === $slash;
-                if (!$endsWithForwardSlash) {
-                    $string = $string . $slash;
-                }
-            }
-        }
-    }
-
     private function getEmailType($input)
     {
         return $input['type'] ?? config('mailora.defaults.type', 'general');
-    }
-
-    public static function getView($type, $input)
-    {
-        $view = 'mailora::general';
-
-        $viewsRootDir = config('mailora.views-root-directory') ?? '/resources/views/';
-        $viewsEmailDir = config('mailora.views-email-directory') ?? 'emails';
-
-        self::ensureSlashes($viewsRootDir);
-        self::ensureSlashes($viewsEmailDir, false, true);
-
-        $customPotentialViewPathTruncated = $viewsEmailDir . $type;
-        $customPotentialViewPathFull = base_path() . $viewsRootDir . $customPotentialViewPathTruncated . '.blade.php';
-
-        if (file_exists($customPotentialViewPathFull)) {
-            $view = $customPotentialViewPathTruncated;
-        } else {
-            if ($type !== 'general') {
-                $message = 'Custom type specified does have corresponding custom view. Email not sent. ';
-                $message .= json_encode($input);
-                self::error($message);
-                return false;
-            }
-        }
-
-        return $view;
     }
 
     /**
