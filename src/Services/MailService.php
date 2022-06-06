@@ -121,8 +121,26 @@ class MailService
         $this->setReplyTo($input, $email);
         $this->setAttachments($input, $email);
 
-        // eroare parse view; probabil template-ul nu e pregatit
-        Mail::send($email);
+        return Mail::send($email);
+    }
+
+    public function sendStudentFocusApplicationEmail($input)
+    {
+        $input['sender'] = auth()->user()->email;
+        $input['subject'] = "Student Focus Application from " . auth()->user()->email;
+        $input['email-message'] = "Email succesfully sent";
+        $input['sender'] = auth()->user()->email;
+
+        try {
+            $this->sendSecure($input);
+        } catch (Exception $exception) {
+            error_log(
+                'Email failed with message: "' . $exception->getMessage() . '". Email input ' .
+                '(passed through json_encode): "' . json_encode($input) . '"'
+            );
+            return false;
+        }
+        return true;
     }
 
     /**
@@ -403,7 +421,6 @@ class MailService
     private function getEmailClass($type): string
     {
         $typePascalCased = str_replace('-', '', ucwords($type, '-'));
-
         $prospectiveClassFromMailora = 'Railroad\\Mailora\\Mail\\' . $typePascalCased;
 
         if (class_exists($prospectiveClassFromMailora)) {
