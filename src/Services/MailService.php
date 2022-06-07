@@ -127,9 +127,9 @@ class MailService
     public function sendStudentFocusApplicationEmail($input)
     {
         $input['sender'] = auth()->user()->email;
-        $input['subject'] = "Student Focus Application from " . auth()->user()->email;
+        $input['recipient'] = config('mailora.' . $input['brand'] . ".submit_student_focus_recipient", "support@musora.com");
         $input['email-message'] = "Email succesfully sent";
-        $input['sender'] = auth()->user()->email;
+        $input['student-progress-info'] = "https://musora.com/admin/user-progress-info/" . auth()->user()->id;
 
         try {
             $this->sendSecure($input);
@@ -138,6 +138,7 @@ class MailService
                 'Email failed with message: "' . $exception->getMessage() . '". Email input ' .
                 '(passed through json_encode): "' . json_encode($input) . '"'
             );
+
             return false;
         }
         return true;

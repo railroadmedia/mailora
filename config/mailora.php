@@ -38,4 +38,11 @@ return [
         'type' => env('MAILORA_DEFAULT_TYPE', null),
         'users-email-set-reply-to' => true,
     ],
+
+    'submit_student_focus_recipient' => [
+        'drumeo' => 'support@drumeo.com',
+        'pianote' => 'team+studentreviews@pianote.com',
+        'guitareo' => 'support@guitareo.com',
+        'singeo' => 'support.singeo.com'
+    ],
 ];

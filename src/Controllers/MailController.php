@@ -2,7 +2,6 @@
 
 namespace Railroad\Mailora\Controllers;
 
-use Illuminate\Http\JsonResponse;
 use Railroad\Mailora\Services\MailService;
 use Illuminate\Http\Request;
 
