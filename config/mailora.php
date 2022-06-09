@@ -28,6 +28,20 @@ return [
         'sender-name' => env('MAILORA_DEFAULT_SENDER_NAME', null), // REQUIRED
         'recipient-address' => env('MAILORA_DEFAULT_RECIPIENT_ADDRESS', null), // REQUIRED
 
+        'support-email-address' => [
+            'drumeo' => 'support@drumeo.com',
+            'pianote' => 'support@pianote.com',
+            'guitareo' => 'support@guitareo.com',
+            'singeo' => 'support@singeo.com'
+        ],
+
+        'support-sender-name' => [
+            'drumeo' => 'Drumeo',
+            'pianote' => 'Pianote System',
+            'guitareo' => 'Guitareo Support',
+            'singeo' => 'Singeo System'
+        ],
+
         // 2.1 Optional
         'recipient-name' => env('MAILORA_DEFAULT_RECIPIENT_NAME', null),
         'subject' => null,
@@ -44,5 +58,14 @@ return [
         'pianote' => 'team+studentreviews@pianote.com',
         'guitareo' => 'support@guitareo.com',
         'singeo' => 'support.singeo.com'
+    ],
+
+
+    'logo_server' => 'https://dmmior4id2ysr.cloudfront.net/logos/',
+    'logo_name' => [
+        'drumeo' => 'drumeo-logo.png',
+        'pianote' => 'pianote-logo-red.png',
+        'guitareo' => 'guitareo-logo.png',
+        'singeo' => 'singeo-logo-purple'
     ],
 ];
