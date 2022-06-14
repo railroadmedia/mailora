@@ -23,11 +23,11 @@ class SupportContact extends Mailable
     {
         $this->input = $input;
 
-        if(!empty(current_user())){
+        if(!empty(user())){
             $this->view = 'support-contact-from-student';
-            $this->input['studentName'] = current_user()->getDisplayName();
-            $this->input['studentEmail'] = current_user()->getEmail();
-            $this->input['studentId'] = current_user()->getId();
+            $this->input['studentName'] = user()->display_name;
+            $this->input['studentEmail'] = user()->email;
+            $this->input['studentId'] = user()->id;
             $this->view = MailService::getView('support-contact-from-student', []);
         }else{
             $this->view = MailService::getView('support-contact-from-public', []);

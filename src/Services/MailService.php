@@ -127,7 +127,7 @@ class MailService
     public function sendStudentFocusApplicationEmail($input)
     {
         $input['sender'] = auth()->user()->email;
-        $input['recipient'] = config('mailora.' . $input['brand'] . ".submit_student_focus_recipient", "support@musora.com");
+        $input['recipient'] = config('mailora.' . $input['brand'] . '.submit-student-focus-recipient' , "support@musora.com");
         $input['email-message'] = "Email succesfully sent";
         $input['student-progress-info'] = "https://musora.com/admin/user-progress-info/" . auth()->user()->id;
 
@@ -221,8 +221,8 @@ class MailService
 
     private function setSender($input, Mailable &$email)
     {
-        $senderAddress = config('mailora.defaults.sender-address');
-        $senderName = config('mailora.defaults.sender-name');
+        $senderAddress = config('mailora.' .brand() . '.support-email-address');
+        $senderName = config('mailora.' . brand() . '.support-sender-name');
 
         if (!empty($input['sender-address'])) {
             $senderAddress = $input['sender-address'];
@@ -252,7 +252,7 @@ class MailService
 
         $recipients = [
             [
-                'address' => config('mailora.defaults.recipient-address'),
+                'address' => config('mailora.defaults.support-email-address.' . brand()),
                 'name' => config('mailora.defaults.recipient-name')
             ]
         ];
@@ -397,7 +397,7 @@ class MailService
         }
 
         foreach ($input['attachments'] ?? [] as $attachment) {
-            if (is_a(\Illuminate\Http\UploadedFile::class, $attachment)) {
+            if ($attachment instanceof \Illuminate\Http\UploadedFile) {
                 /** @var \Illuminate\Http\UploadedFile $attachment */
                 $email->attach(
                     $attachment,
