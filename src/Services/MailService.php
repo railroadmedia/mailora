@@ -221,13 +221,8 @@ class MailService
 
     private function setSender($input, Mailable &$email)
     {
-        if (brand()) {
-            $senderAddress = config('mailora.' .brand() . '.support-email-address');
-            $senderName = config('mailora.' . brand() . '.support-sender-name');
-        } else {
-            $senderAddress = config('mailora.defaults.sender-address');
-            $senderName = config('mailora.defaults.sender-name');
-        }
+        $senderAddress = config('mailora.defaults.sender-address');
+        $senderName = config('mailora.defaults.sender-name');
 
         if (!empty($input['sender-address'])) {
             $senderAddress = $input['sender-address'];
