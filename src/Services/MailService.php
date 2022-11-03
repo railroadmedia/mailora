@@ -227,6 +227,10 @@ class MailService
         $senderAddress = config('mailora.defaults.sender-address');
         $senderName = config('mailora.defaults.sender-name');
 
+        if (!empty($input['studentName'])) {
+            $senderName = $input['studentName'];
+        }
+
         if (!empty($input['sender-address'])) {
             $senderAddress = $input['sender-address'];
             $senderName = null;
