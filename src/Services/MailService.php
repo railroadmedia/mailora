@@ -78,6 +78,9 @@ class MailService
      */
     public function sendPublic($input)
     {
+        /* if email is sent from outside members area, the reply should be sent to the student's email */
+        $input['reply-to'] = $input['studentEmail'] ?? null;
+
         $this->ensureConfigSet(true);
         $email = $this->getMailable($input);
 
