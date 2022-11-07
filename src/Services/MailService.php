@@ -399,7 +399,7 @@ class MailService
 
     private function setAttachments($input, Mailable &$email)
     {
-        if (!empty($input['attachment'])) {
+        if (!empty($input['attachment']) && ($input['attachment'] !== "null")) {
             $input['attachments'][] = $input['attachment'];
         }
 
