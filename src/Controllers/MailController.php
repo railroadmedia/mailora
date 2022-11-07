@@ -28,6 +28,10 @@ class MailController
     {
         $input = $request->all();
         try {
+            $request->validate([
+                'type' => 'required',
+                'message' => 'required',
+            ]);
             $this->mailService->sendPublic($input);
         } catch (\Exception $exception) {
             error_log($exception->getMessage());
